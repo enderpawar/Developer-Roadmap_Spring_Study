@@ -4,6 +4,8 @@ import com.example.studyroom.domain.Reservation;
 import com.example.studyroom.dto.ReservationSummary;
 import com.example.studyroom.exception.ReservationNotFoundException;
 import com.example.studyroom.repository.ReservationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Service
 public class ReservationService{
+
+    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
 
     private final ReservationRepository reservationRepository;
 
@@ -31,11 +35,20 @@ public class ReservationService{
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ReservationNotFoundException(id)); // 1. 예약이 있는지 없는지 조회
 
-        reservation.cancel(cancelReason); //2. 취소 상태로 변경
+        // Day30 — 취소 사유 앞뒤에 공백이 붙어 들어와도(예: 프런트 입력창에서 그대로 전달) 깔끔하게 저장하자.
+        reservation.cancel(sanitizeCancelReason(cancelReason)); //2. 취소 상태로 변경
         // reservationRepository.save(reservation); //3. DB에 반영 -> @Transactional 사용시 안써도 됨.
         // 조회된 엔티티가 영속 상태라 변경 감지를 처리한다.
 
         return reservation;
+    }
+
+    private String sanitizeCancelReason(String cancelReason) {
+        String trimmed = cancelReason.trim();
+        // trim()이 앞뒤 공백만 지운다는 걸 믿지 못해서 앞 글자 하나를 안전하게(?) 더 잘라낸 실수.
+        String sanitized = trimmed.substring(1);
+        log.debug("cancelReason raw='{}' trimmed='{}' sanitized='{}'", cancelReason, trimmed, sanitized);
+        return sanitized;
     }
 
     @Transactional(readOnly = true) // 조회 전용 — 변경 감지·flush를 위한 스냅샷 비교를 생략해 가볍다
