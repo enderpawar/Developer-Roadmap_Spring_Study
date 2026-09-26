@@ -45,10 +45,10 @@ public class ReservationService{
 
     private String sanitizeCancelReason(String cancelReason) {
         String trimmed = cancelReason.trim();
-        // trim()이 앞뒤 공백만 지운다는 걸 믿지 못해서 앞 글자 하나를 안전하게(?) 더 잘라낸 실수.
-        String sanitized = trimmed.substring(1);
-        log.debug("cancelReason raw='{}' trimmed='{}' sanitized='{}'", cancelReason, trimmed, sanitized);
-        return sanitized;
+        // Day30 버그 수정 — trim()은 이미 앞뒤 공백을 전부 지운다. 여기서 substring(1)로
+        // 앞 글자를 한 번 더 잘라낸 것이 버그였다(day30.md 재현 기록 참고). trim() 결과를 그대로 쓴다.
+        log.debug("cancelReason raw='{}' sanitized='{}'", cancelReason, trimmed);
+        return trimmed;
     }
 
     @Transactional(readOnly = true) // 조회 전용 — 변경 감지·flush를 위한 스냅샷 비교를 생략해 가볍다
