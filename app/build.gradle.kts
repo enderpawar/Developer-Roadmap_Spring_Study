@@ -40,6 +40,12 @@ dependencies {
 	//개발용 DB. runtimeOnly = 컴파일에는 안 쓰이고 실행할 때만 필요
 	runtimeOnly("com.h2database:h2")
 
+	// Week E D3 - Docker Compose의 mysql:8 컨테이너에 연결하기 위한 드라이버.
+	// flyway-core만으로는 MySQL 방언 확장(예: 일부 데이터타입·문법 처리)을 모른다 — flyway-mysql이 그 역할.
+	// 둘 다 io.spring.dependency-management가 Spring Boot BOM으로 버전을 맞춰주므로 버전을 안 적는다.
+	runtimeOnly("com.mysql:mysql-connector-j")
+	runtimeOnly("org.flywaydb:flyway-mysql")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

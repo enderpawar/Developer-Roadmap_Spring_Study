@@ -1,0 +1,39 @@
+# Day31 — app(스프링부트) + mysql:8. 로컬에는 Docker가 설치돼 있지 않아 실행 검증은
+# 하지 못했다(day31.md에 그대로 남김) — 실제 실행 검증은 Day32의 GitHub Actions "docker" 잡이 한다.
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-studyroom_root}
+      MYSQL_DATABASE: studyroom
+      MYSQL_USER: ${MYSQL_USER:-studyroom}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-studyroom}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # app이 healthcheck 없이 곧바로 mysql에 붙으면, 컨테이너는 떴지만 mysqld는 아직 초기화 중인
+      # 상태(포트는 열렸는데 인증 준비가 안 된 상태)에 걸려 접속 실패가 날 수 있다.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-studyroom_root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_USER: ${MYSQL_USER:-studyroom}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-studyroom}
+      JWT_SECRET: ${JWT_SECRET:-studyroom-docker-secret-key-must-be-at-least-32-bytes-long}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
