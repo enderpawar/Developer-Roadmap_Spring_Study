@@ -119,7 +119,9 @@ class AuthControllerHttpTest {
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("아이디 또는 비밀번호가 올바르지 않습니다."));
+                .andExpect(jsonPath("$.error").value("아이디 또는 비밀번호가 올바르지 않습니다."))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED")) // Day28 — 응답 형식 통일 확인
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test

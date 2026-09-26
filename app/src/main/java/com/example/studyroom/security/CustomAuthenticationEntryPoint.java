@@ -8,6 +8,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Instant;
 
 // Day24 — 인증 자체가 안 된 요청(토큰 없음/위조/만료)이 인가가 필요한 경로에 닿으면 여기로 온다.
 // 기존 GlobalExceptionHandler(@RestControllerAdvice)는 DispatcherServlet 안쪽만 잡을 수 있는데,
@@ -21,6 +22,10 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+        // Day28 — GlobalExceptionHandler의 401(InvalidCredentialsException)과 형식을 맞췄다:
+        // "error"는 유지하고 "code"·"timestamp"를 추가.
+        response.getWriter().write(
+                "{\"error\":\"인증이 필요합니다.\",\"code\":\"UNAUTHORIZED\",\"timestamp\":\""
+                        + Instant.now() + "\"}");
     }
 }

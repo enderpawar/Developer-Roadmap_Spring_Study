@@ -129,7 +129,9 @@ class ReservationControllerHttpTest {
                         .header("Authorization", "Bearer " + userToken)
                         .param("cancelReason","권한 없음 테스트"))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error").value("권한이 없습니다."));
+                .andExpect(jsonPath("$.error").value("권한이 없습니다."))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN")) // Day28 — 응답 형식 통일 확인
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -143,6 +145,8 @@ class ReservationControllerHttpTest {
                                 }
                                 """))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("인증이 필요합니다."));
+                .andExpect(jsonPath("$.error").value("인증이 필요합니다."))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED")) // Day28 — 응답 형식 통일 확인
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }
