@@ -1,5 +1,9 @@
 package com.example.studyroom.controller;
 
+import com.example.studyroom.domain.Member;
+import com.example.studyroom.repository.MemberRepository;
+import com.example.studyroom.security.JwtProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,9 +27,33 @@ class ReservationControllerHttpTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
+    private JwtProvider jwtProvider;
+
+    private String userToken;
+    private String adminToken;
+
+    // Day24 — Security가 들어오면서 이 클래스의 모든 테스트가 401로 깨졌다(day24.md 기록).
+    // 실제 로그인 절차(POST /auth/login) 대신, jwtProvider.issue()로 바로 토큰을 발급해
+    // "인증된 사용자가 있다"는 전제만 테스트마다 빠르게 만든다.
+    @BeforeEach
+    void setUpAuthenticatedUsers() {
+        Member user = memberRepository.save(new Member("사용자", "http-test-user", "unused"));
+        userToken = jwtProvider.issue(user.getLoginId());
+
+        Member admin = memberRepository.save(new Member("관리자", "http-test-admin", "unused"));
+        admin.grantAdmin();
+        memberRepository.save(admin);
+        adminToken = jwtProvider.issue(admin.getLoginId());
+    }
+
     @Test
     void reserveReturnsSuccessResponseForValidBody() throws Exception {
         mockMvc.perform(post("/reservations")
+                        .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -40,6 +68,7 @@ class ReservationControllerHttpTest {
     @Test
     void reserveReturns400ForBlankBodyFields() throws Exception {
         mockMvc.perform(post("/reservations")
+                        .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -55,6 +84,7 @@ class ReservationControllerHttpTest {
     @Test
     void listReturnsReservationsWithMemberNameOrNull() throws Exception {
         mockMvc.perform(post("/reservations")
+                        .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -65,7 +95,7 @@ class ReservationControllerHttpTest {
                 .andExpect(status().isOk());
 
         // 이 경로로 만든 예약은 member를 배정하지 않는다 — memberName은 null로 내려와야 한다.
-        mockMvc.perform(get("/reservations"))
+        mockMvc.perform(get("/reservations").header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].roomName").value("C-303"))
                 .andExpect(jsonPath("$[0].requesterName").value("하늘"))
@@ -74,7 +104,10 @@ class ReservationControllerHttpTest {
 
     @Test
     void cancelReturns404WhenReservationDoesNotExist() throws Exception {
-        mockMvc.perform(post("/reservations/cancel/{id}", 999_999L).param("cancelReason","테스트 사유"))
+        // 취소는 ADMIN 전용 경로 — adminToken이 필요하다.
+        mockMvc.perform(post("/reservations/cancel/{id}", 999_999L)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .param("cancelReason","테스트 사유"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error")
                         .value("예약을 찾을 수 없습니다. (id: 999999)"));
@@ -82,9 +115,34 @@ class ReservationControllerHttpTest {
 
     @Test
     void cancelReturns400WhenIdIsNotPositive() throws Exception {
-        mockMvc.perform(post("/reservations/cancel/{id}", 0L).param("cancelReason","테스트사유2"))
+        mockMvc.perform(post("/reservations/cancel/{id}", 0L)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .param("cancelReason","테스트사유2"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[0]")
                         .value("예약 번호는 1 이상이어야 합니다"));
+    }
+
+    @Test
+    void cancelReturns403WhenCallerIsNotAdmin() throws Exception {
+        mockMvc.perform(post("/reservations/cancel/{id}", 1L)
+                        .header("Authorization", "Bearer " + userToken)
+                        .param("cancelReason","권한 없음 테스트"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("권한이 없습니다."));
+    }
+
+    @Test
+    void reserveReturns401WhenAuthorizationHeaderIsMissing() throws Exception {
+        mockMvc.perform(post("/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roomName": "Z-999",
+                                  "requesterName": "익명"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("인증이 필요합니다."));
     }
 }

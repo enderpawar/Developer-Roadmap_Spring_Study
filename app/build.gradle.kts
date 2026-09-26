@@ -28,8 +28,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
-	// week D D1 - 비밀번호 해시(BCrypt)만 먼저 쓴다. 필터체인 전체(starter-security)는 D3에서.
-	implementation("org.springframework.security:spring-security-crypto")
+	// week D D3 - 필터체인 전체. spring-security-crypto(D1)를 포함하므로 별도 의존성은 유지해도 무방.
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	testImplementation("org.springframework.security:spring-security-test")
 
 	// week D D2 - JWT 발급/검증. api는 컴파일에, impl/jackson은 런타임에만 필요(리플렉션으로 로드).
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")

@@ -20,6 +20,10 @@ public class Member {
 
     private String password; // 항상 BCrypt 해시만 저장한다 — 평문 저장 금지.
 
+    // Day24 — 인가(authorization)에 쓰는 권한. 필드 초기값을 줘서 기존 생성자 두 개(Member(name),
+    // Member(name, loginId, password)) 모두 자동으로 "USER"가 되게 한다.
+    private String role = "USER";
+
     // 역방향(inverse side) — 연관관계의 주인은 Reservation.member(FK를 들고 있는 쪽).
     // mappedBy = "member" → 이 필드는 DB에 컬럼을 만들지 않고, Reservation.member를 그대로 조회해서 보여주기만 한다.
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
@@ -53,6 +57,15 @@ public class Member {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    // 별도 관리자 가입 화면 없이, 학습 범위에서는 이 메서드로 테스트용 관리자를 만든다.
+    public void grantAdmin() {
+        this.role = "ADMIN";
     }
 
     public List<Reservation> getReservations() {
