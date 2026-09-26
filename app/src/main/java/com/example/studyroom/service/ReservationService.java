@@ -1,10 +1,13 @@
 package com.example.studyroom.service;
 
 import com.example.studyroom.domain.Reservation;
+import com.example.studyroom.dto.ReservationSummary;
 import com.example.studyroom.exception.ReservationNotFoundException;
 import com.example.studyroom.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class ReservationService{
@@ -33,5 +36,16 @@ public class ReservationService{
         // 조회된 엔티티가 영속 상태라 변경 감지를 처리한다.
 
         return reservation;
+    }
+
+    @Transactional(readOnly = true) // 조회 전용 — 변경 감지·flush를 위한 스냅샷 비교를 생략해 가볍다
+    public List<ReservationSummary> findAllSummaries() {
+        // left join fetch — member가 없는 예약(현재 HTTP 경로로 만든 예약 전부)도 목록에서 빠지면 안 된다.
+        return reservationRepository.findAllWithMemberOrNull().stream()
+                .map(r -> new ReservationSummary(
+                        r.getRoomName(),
+                        r.getRequesterName(),
+                        r.getMember() == null ? null : r.getMember().getName()))
+                .toList();
     }
 }

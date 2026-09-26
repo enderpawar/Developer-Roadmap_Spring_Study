@@ -35,4 +35,9 @@ public class JpaReservationRepository implements ReservationRepository{
     public List<Reservation> findAllWithMember(){
         return delegate.findAllWithMember();
     }
+
+    @Override
+    public List<Reservation> findAllWithMemberOrNull(){
+        return delegate.findAllWithMemberOrNull();
+    }
 }

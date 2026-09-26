@@ -12,5 +12,8 @@ public interface ReservationRepository {
     default List<Reservation> findAllWithMember(){
         throw new UnsupportedOperationException();
     };
+    default List<Reservation> findAllWithMemberOrNull(){
+        throw new UnsupportedOperationException();
+    };
 }
 

@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,6 +50,26 @@ class ReservationControllerHttpTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.roomName").value("방 이름은 비어있을 수 없습니다"))
                 .andExpect(jsonPath("$.requesterName").value("예약자 이름은 비어있을 수 없습니다."));
+    }
+
+    @Test
+    void listReturnsReservationsWithMemberNameOrNull() throws Exception {
+        mockMvc.perform(post("/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roomName": "C-303",
+                                  "requesterName": "하늘"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // 이 경로로 만든 예약은 member를 배정하지 않는다 — memberName은 null로 내려와야 한다.
+        mockMvc.perform(get("/reservations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].roomName").value("C-303"))
+                .andExpect(jsonPath("$[0].requesterName").value("하늘"))
+                .andExpect(jsonPath("$[0].memberName").value(nullValue()));
     }
 
     @Test
