@@ -28,6 +28,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+	// week D D1 - 비밀번호 해시(BCrypt)만 먼저 쓴다. 필터체인 전체(starter-security)는 D3에서.
+	implementation("org.springframework.security:spring-security-crypto")
+
 	//개발용 DB. runtimeOnly = 컴파일에는 안 쓰이고 실행할 때만 필요
 	runtimeOnly("com.h2database:h2")
 
