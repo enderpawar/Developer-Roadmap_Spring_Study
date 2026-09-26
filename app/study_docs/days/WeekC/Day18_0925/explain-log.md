@@ -61,3 +61,22 @@ select m1_0.id, m1_0.name from member m1_0 where m1_0.id=?
 ## 다음 시작점
 
 Day18 이어서(미완료) — 빈칸 예제(`Member.reservations`에 `@OneToMany(mappedBy=...)` 채우기)부터 재개. 이후 독립 변형 → 인출 → 복습큐 등록.
+
+## 이월분 완료 — 컬렉션 방향 LAZY 실험 (9/27)
+
+주제: `Member.reservations`(컬렉션, `mappedBy`) 방향의 LAZY 동작이 단일 참조(`Reservation.member`)와 같은지 다른지 확인.
+
+- 코드: `MemberLazyProxyTest.memberReservationsCollectionIsLazyPersistentBag()` — `Member` 저장 → `Reservation`에 `assignMember()` → `flush()`/`clear()` → `memberRepository.findById()`로 재조회 → `getReservations()`의 타입·초기화 여부·`size()` 순서로 확인
+- 예측: ① 컬렉션도 실제 `ArrayList`가 아니라 Hibernate가 감싼 래퍼일 것이다 ② `.size()` 호출 전까지는 미초기화 상태일 것이다
+- 실행 결과: `assertInstanceOf(PersistentBag.class, ...)` 통과, `.size()` 호출 전 `Hibernate.isInitialized()` == `false`, 호출 후 `true`, `size()` == `1`
+- 판정: 두 예측 모두 맞았다. 다만 래퍼의 정체가 Day18 본문에서 본 것과 같은 `Entity$HibernateProxy`가 아니라 `org.hibernate.collection.spi.PersistentBag`이라는 별개의 클래스였다 — 단일 참조는 프록시로, 컬렉션은 컬렉션 전용 래퍼로 감싼다는 걸 이번에 구분했다.
+
+## 새로 겪은 것 — import 경로 직접 확인
+
+`PersistentBag`의 실제 패키지 경로(`org.hibernate.collection.spi.PersistentBag`)를 임포트하기 전에, 프로젝트가 실제로 물고 있는 `hibernate-core-6.6.18.Final.jar` 안의 클래스 목록을 직접 열어 확인했다 — 레퍼런스 문서에 따라 6.x부터 `org.hibernate.collection.internal` → `spi`로 패키지가 이동한 이력이 있어, 검색 결과만 믿지 않고 실제 jar를 확인하는 절차를 거쳤다. 그 결과 이번 유닛은 새로운 컴파일·런타임 오류 없이 한 번에 통과했다.
+
+## 검증 근거(이월분)
+
+- `src/main/java/com/example/studyroom/domain/Member.java:19-20, 37-39`
+- `src/test/java/com/example/studyroom/repository/MemberLazyProxyTest.java:49-72`
+- `./gradlew test --console=plain` BUILD SUCCESSFUL, 27/27 (커밋 [`7a9626d`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/7a9626dcf62c0df95a8459fa6cb9472acbf0cbce))

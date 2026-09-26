@@ -161,6 +161,24 @@ JdbcReservationRepository is not abstract and does not override abstract method 
 
 커밋: [ee61c80](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/ee61c8040300d21fb4926b47074ac7e91a8f4dd1)
 
+### 3) 보완 — println에서 Statistics 단언으로 교체
+
+위에서 "두 테스트는 SQL 개수를 assert하지 않는다"고 적었던 지점을 이후 세션(9/27)에서 보완했다. `NPlusOneTest`에 `@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")`를 추가하고, `entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics()`로 꺼낸 `Statistics`로 실제 쿼리 횟수를 단언했다.
+
+```java
+List<Reservation> reservations = reservationRepository.findAll();
+for (Reservation r : reservations) {
+    r.getMember().getName();
+}
+assertEquals(1 + names.length, statistics.getPrepareStatementCount()); // N+1: 4
+
+List<Reservation> withMember = reservationRepository.findAllWithMember();
+// (순회 생략)
+assertEquals(1, statistics.getPrepareStatementCount());                // fetch join: 1
+```
+
+숫자는 그대로(4번→1번)였지만, 이제는 사람이 로그를 세지 않아도 테스트가 실패로 알려준다. `SessionFactory`는 Spring Boot가 Bean으로 직접 노출하지 않아 `EntityManagerFactory`를 `unwrap`해서 꺼냈다. 통계는 `NPlusOneTest`에만 켰다 — 모든 테스트에 켜면 매 요청마다 느려진다. 커밋 [7a9626d](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/7a9626dcf62c0df95a8459fa6cb9472acbf0cbce).
+
 ## 3. 스스로 답한 질문
 
 ### 1) `findAll()` 구간과 순회 구간의 member SELECT 분포

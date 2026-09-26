@@ -115,3 +115,19 @@ default <Reservation> findAllWithMember(){
 ## 다음 시작점
 
 Day19 완성예제(①)까지 완료. ②빈칸예제·③독립 변형·④인출(노트 덮고 재작성)·⑥복습큐 등록(신규 항목 일부만)은 다음 세션으로 이월. Velog 포스트는 사용자가 별도 세션(Opus)에서 작성 예정.
+
+## 이월분 완료 — println에서 Statistics 단언으로 교체 (9/27)
+
+- 코드: `NPlusOneTest`에 `@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")` 추가, `statistics()` 헬퍼로 `entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics()`를 꺼냄
+- 예측: `println` 로그로 셌던 값(N+1 4번, fetch join 1번)이 `Statistics.getPrepareStatementCount()` 단언으로도 그대로 나올 것이다
+- 실행 결과: `findAllTriggersNPlusOneSelects` → `statistics.clear()` 이후 `getPrepareStatementCount()` == `4`(findAll 1 + member 지연로딩 3). `findAllWithMemberUsesSingleJoinQuery` → `1`
+- 판정: 예측과 일치. Day19 세션에서 println으로 관찰했던 "4번→1번"과 동일한 실측치가 숫자 단언으로 고정됐다
+
+## 겪은 것 — `SessionFactory`를 Bean으로 바로 주입하지 않은 이유
+
+`@Autowired SessionFactory`를 시도하지 않고 처음부터 `entityManager.getEntityManagerFactory().unwrap(SessionFactory.class)`로 꺼냈다. Spring Boot의 JPA 자동구성이 `org.hibernate.SessionFactory` 자체를 Bean으로 노출하지 않는다는 걸 사전에 알고 있었기 때문에, `NoSuchBeanDefinitionException`을 밟지 않고 한 번에 통과했다. 이번 유닛은 새로운 컴파일·런타임 오류 없이 끝났다 — 오류를 지어내지 않고 사실대로 남긴다.
+
+## 검증 근거(이월분)
+
+- `src/test/java/com/example/studyroom/repository/NPlusOneTest.java:18, 30-36, 52-61, 78-86`
+- `./gradlew test --console=plain` BUILD SUCCESSFUL, 27/27 (커밋 [`7a9626d`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/7a9626dcf62c0df95a8459fa6cb9472acbf0cbce))

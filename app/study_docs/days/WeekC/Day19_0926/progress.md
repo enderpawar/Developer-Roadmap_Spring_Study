@@ -2,6 +2,8 @@
 
 > 주제: N+1 확인 + fetch join
 > 상태: **완성예제(①)까지 완료, 나머지는 다음 세션으로 이월.** Full 루프 6단계 중 ①완성예제(문제 재현 + fetch join 해결)·⑤예측→실행→차이설명 완료. ②빈칸예제·③독립 변형·④인출(노트 덮고 재작성)·⑥복습큐 등록(신규 일부만)은 남음.
+>
+> **2026-09-27 완료**: `println` 관찰 방식이던 `NPlusOneTest` 두 테스트를 Hibernate `Statistics.getPrepareStatementCount()` 단언으로 교체했다(N+1 케이스 `4`, fetch join 케이스 `1` — 기존 println 실측치와 동일한 숫자를 이제 자동으로 검증). 커밋 [`7a9626d`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/7a9626dcf62c0df95a8459fa6cb9472acbf0cbce), `./gradlew test` 27/27 통과. 상세는 아래 9절.
 
 ## 1. 완료한 것
 
@@ -58,3 +60,24 @@
 ## 8. 다음 세션 시작점
 
 **Day19 이어서 — 빈칸예제(②)부터 재개.** ①완성예제는 끝났으니, N+1/fetch join을 살짝 다른 조건(예: 다른 연관관계 필드, 또는 단건 조회 `Optional<Reservation>`에 fetch join 적용 등)으로 빈칸 → 독립 변형 → 인출(노트 덮고 재작성) → 복습큐 신규 항목 등록 순으로 이어간다. Velog 포스트는 사용자가 별도로 Opus 세션에서 작성 예정.
+
+## 9. 이월분 완료 — println을 Statistics 단언으로 교체 (9/27)
+
+Day19 세션에서는 `println`으로 SQL 로그를 눈으로 세었다. 이번 이월분에서는 그 관찰을 `Hibernate Statistics`로 실제 쿼리 횟수를 단언하는 테스트로 바꿨다(커밋 `7a9626d`).
+
+### 코드 변화
+
+- `@SpringBootTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")`를 `NPlusOneTest`에만 적용 — 다른 테스트까지 통계를 켜면 매 요청이 느려진다
+- `entityManager.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics()`로 `Statistics`를 꺼냄 — Spring Boot가 `org.hibernate.SessionFactory` 자체를 Bean으로 등록하지 않기 때문에 `@Autowired`가 아니라 unwrap 방식을 처음부터 선택했다
+- `statistics.clear()` 이후 `assertEquals(1 + names.length, statistics.getPrepareStatementCount())`(N+1), `assertEquals(1, statistics.getPrepareStatementCount())`(fetch join)
+
+### 예측과 실제
+
+- 예측: `println`으로 눈으로 셌던 4번(N+1)·1번(fetch join)이 `Statistics` 단언으로도 똑같이 나올 것이다
+- 실제: `findAllTriggersNPlusOneSelects`는 `4`, `findAllWithMemberUsesSingleJoinQuery`는 `1` — 예측과 일치. 사람이 로그 줄을 세던 숫자가 이제 테스트 실패로 자동 감지된다
+
+### 이 교체가 바꾼 것
+
+`println` 방식은 코드가 맞아도 사람이 로그를 안 세면 회귀를 못 잡는다. `Statistics.getPrepareStatementCount()` 단언은 누군가 나중에 `findAllWithMember()`를 실수로 LAZY 방식으로 되돌려도 테스트가 빨간불로 바로 알려준다. 이번 유닛은 새로운 오류 없이 한 번에 통과했다 — 오류를 지어내지 않고 사실대로 남긴다.
+
+검증: `./gradlew test` 27/27 통과(커밋 [`7a9626d`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/7a9626dcf62c0df95a8459fa6cb9472acbf0cbce)).
