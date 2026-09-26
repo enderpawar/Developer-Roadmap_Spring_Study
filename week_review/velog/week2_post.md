@@ -253,4 +253,4 @@ InMemory Repository는 `Map`에 데이터를 보관해서 서버가 꺼지면 �
 
 #Spring #SpringBoot #JPA #MySQL #DTO #Transactional #Backend #TIL #백엔드스터디
 
-오늘 공부한 소스코드: [8week_Spring_Study/week2](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/week2)
+오늘 공부한 소스코드: [Developer-Roadmap_Spring_Study/week2](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/week2)

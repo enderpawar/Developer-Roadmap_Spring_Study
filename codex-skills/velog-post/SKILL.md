@@ -106,7 +106,7 @@ Day 번호가 없거나 모호하면 `app/study_docs/days/`에서 가장 최근(
 
 ---
 
-오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)
+오늘 공부한 소스코드: [Developer-Roadmap_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)
 ```
 
 ## 7. GitHub 링크 규칙
@@ -114,7 +114,7 @@ Day 번호가 없거나 모호하면 `app/study_docs/days/`에서 가장 최근(
 문서의 마지막 줄에는 반드시 다음 링크를 넣는다.
 
 ```markdown
-오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)
+오늘 공부한 소스코드: [Developer-Roadmap_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)
 ```
 
 - 정리 문단(`## 정리하며`) 바로 아래, `---` 구분선 다음 줄에 둔다.

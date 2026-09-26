@@ -174,4 +174,4 @@ Week B를 시작할 때 JPA를 "SQL을 대신 써주는 것"으로 알고 있었
 
 ---
 
-오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)
+오늘 공부한 소스코드: [Developer-Roadmap_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)

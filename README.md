@@ -65,7 +65,7 @@ Day 10까지 `ReservationRepository` 경계는 유지하면서 저장 구현을 
 ## 저장소 구조
 
 ```text
-8week_Spring_Study/
+Developer-Roadmap_Spring_Study/
 ├─ app/                         # 현재 직접 구현하는 Spring Boot 프로젝트
 │  ├─ src/                      # 애플리케이션 코드와 테스트
 │  └─ study_docs/
