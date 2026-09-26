@@ -1,0 +1,8 @@
+package com.example.studyroom.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record LoginRequest(
+        @NotBlank(message = "아이디는 비어있을 수 없습니다") String loginId,
+        @NotBlank(message = "비밀번호는 비어있을 수 없습니다") String password) {
+}

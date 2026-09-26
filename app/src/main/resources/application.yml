@@ -19,3 +19,11 @@ spring:
   flyway:
     enabled: true
 # Week B에서 datasource(H2 → MySQL)와 JPA 설정을 여기에 추가한다.
+
+# Week D D2 - JWT 서명 키와 만료 시간. 실무라면 환경변수/시크릿 매니저로 빼야 하지만
+# 이 학습 트랙 범위에서는 application.yml에 직접 둔다.
+jwt:
+  # HS256은 RFC 7518 3.2에 따라 키가 256비트(32바이트) 이상이어야 한다.
+  # "studyroom-secret-key"(160비트)로 처음 돌려보니 WeakKeyException이 났다 — 아래로 늘려서 해결.
+  secret: studyroom-secret-key-must-be-at-least-32-bytes-long
+  expiration: 3600000 # 1시간(ms)
