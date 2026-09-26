@@ -1,0 +1,13 @@
+# Day29 — 테스트 프로필. build.gradle.kts의 Test 태스크가 SPRING_DATASOURCE_*·SPRING_PROFILES_ACTIVE=test를
+# 환경변수로 강제 지정해두었고, OS 환경변수는 application-{profile}.yml보다 우선순위가 높다 — 그래서
+# 실제 테스트 실행 시에는 거의 항상 build.gradle.kts 쪽 값이 이긴다. 그래도 "test 프로필을 직접 켰을 때"의
+# 기준값을 여기 남겨서, 운영 프로필의 datasource.url이 실수로 테스트에 새어 들어오는 사고를 막는
+# 안전망 역할을 하게 한다.
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+
+jwt:
+  secret: studyroom-test-secret-key-must-be-at-least-32-bytes-long

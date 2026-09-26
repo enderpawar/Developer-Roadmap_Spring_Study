@@ -1,0 +1,11 @@
+# Day29 — 로컬 개발용 프로필. 예전에 application.yml에 그대로 있던 값들을 여기로 옮겼다.
+# JWT secret을 코드에 커밋하는 게 이상적이진 않지만, 이 값은 로컬 개발 전용이고 운영 secret과
+# 다르므로(별도 env var) 학습 범위에서는 그대로 둔다 — 운영(application-prod.yml)은 반드시 환경변수.
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/studyroom;MODE=MySQL
+    username: sa
+    password:
+
+jwt:
+  secret: studyroom-secret-key-must-be-at-least-32-bytes-long
