@@ -45,6 +45,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
+    // Day33 — 종료 시각이 시작 시각보다 안 나중인 요청. 값 자체가 잘못됐으니 400.
+    @ExceptionHandler(InvalidReservationTimeException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidReservationTime(InvalidReservationTimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+    }
+
+    // Day33 — 같은 방·겹치는 시간대에 이미 예약이 있는 요청. 값은 멀쩡하지만 기존 리소스와
+    // 충돌하는 상태라 DuplicateLoginIdException과 같은 409 계열로 묶었다.
+    @ExceptionHandler(ReservationOverlapException.class)
+    public ResponseEntity<Map<String, String>> handleReservationOverlap(ReservationOverlapException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
     // Day28 — 401/403 응답 형식을 Security 쪽(CustomAuthenticationEntryPoint/CustomAccessDeniedHandler)과
     // 맞춘다: 기존 "error" 필드는 유지하고, 어떤 401/403인지 구분할 "code"와 "timestamp"를 추가한다.
     @ExceptionHandler(InvalidCredentialsException.class)

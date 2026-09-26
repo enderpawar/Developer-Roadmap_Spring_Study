@@ -3,6 +3,7 @@ package com.example.studyroom.repository;
 import com.example.studyroom.domain.Reservation;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,5 +40,10 @@ public class JpaReservationRepository implements ReservationRepository{
     @Override
     public List<Reservation> findAllWithMemberOrNull(){
         return delegate.findAllWithMemberOrNull();
+    }
+
+    @Override
+    public List<Reservation> findOverlapping(String roomName, LocalDateTime startAt, LocalDateTime endAt){
+        return delegate.findOverlapping(roomName, startAt, endAt);
     }
 }

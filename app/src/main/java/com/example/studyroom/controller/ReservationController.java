@@ -23,7 +23,10 @@ public class ReservationController{
     //@RequestBody = 클라이언트가 보낸 JSON body를 자바 객체 (record)로 자동 변환
     @PostMapping("/reservations")
     public String reserve(@RequestBody @Valid ReservationRequest request) {
-        Reservation reservation = reservationService.reserve(request.roomName(),request.requesterName());
+        // Day33 — startAt/endAt이 요청에 없으면(null, null) ReservationService.reserve()가
+        // 시간대 검증·중복 검사를 건너뛰고 예전과 똑같이 동작한다.
+        Reservation reservation = reservationService.reserve(
+                request.roomName(), request.requesterName(), request.startAt(), request.endAt());
 
         return "예약 번호"+ reservation.getId()+"-"+reservation.getRequesterName() + "님이 " + reservation.getRoomName() + " 예약 완료 (확정: " + reservation.isConfirmed() + ")";
     }

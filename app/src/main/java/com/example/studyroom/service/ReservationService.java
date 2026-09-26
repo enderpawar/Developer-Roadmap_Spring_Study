@@ -2,13 +2,16 @@ package com.example.studyroom.service;
 
 import com.example.studyroom.domain.Reservation;
 import com.example.studyroom.dto.ReservationSummary;
+import com.example.studyroom.exception.InvalidReservationTimeException;
 import com.example.studyroom.exception.ReservationNotFoundException;
+import com.example.studyroom.exception.ReservationOverlapException;
 import com.example.studyroom.repository.ReservationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,7 +26,24 @@ public class ReservationService{
     }
 
     public Reservation reserve(String roomName, String requesterName){
-        Reservation reservation = new Reservation(roomName,requesterName);
+        return reserve(roomName, requesterName, null, null);
+    }
+
+    // Day33 — 시간대가 있는 예약. startAt/endAt이 둘 다 없으면(기존 호출부와 동일하게) 시간대
+    // 검증·중복 검사를 건너뛴다 — "시간대는 선택 항목"이라는 설계라, 기존 호출부(위 3-줄 메서드,
+    // 기존 컨트롤러·테스트)를 하나도 안 건드리고 그대로 재사용할 수 있다.
+    public Reservation reserve(String roomName, String requesterName, LocalDateTime startAt, LocalDateTime endAt){
+        if (startAt != null && endAt != null) {
+            if (!endAt.isAfter(startAt)) {
+                throw new InvalidReservationTimeException();
+            }
+            List<Reservation> overlapping = reservationRepository.findOverlapping(roomName, startAt, endAt);
+            if (!overlapping.isEmpty()) {
+                throw new ReservationOverlapException(roomName, startAt, endAt);
+            }
+        }
+
+        Reservation reservation = new Reservation(roomName, requesterName, startAt, endAt);
         reservation.confirm(); // 예약 상태를 변경하고
         return reservationRepository.save(reservation); // reservationRepository의 save 메서드 인자값으로 service가 상태를 변경한 reservation 값을 넘겨준다.
     }

@@ -1,6 +1,8 @@
 package com.example.studyroom.domain; // 자바 컴파일러에게 컴퓨터의 물리주소와 ㅣㅂ슷하게,
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 //Domain = 상태 + 규칙(business rule)을 함께 가진다.
 // record 형태가 아님. 상태가 바뀔 수 있어야하니까.
 
@@ -10,6 +12,12 @@ public class Reservation{
     private String requesterName;
     private boolean confirmed;
     private String cancelReason;
+
+    // Day33 — 같은 방의 예약 시간대 중복을 막으려면 "언제부터 언제까지"가 있어야 한다.
+    // V1~V6까지 만들어진 기존 예약(시간대 없음)과 호환되도록 nullable로 둔다 —
+    // 그래서 기존 생성자 Reservation(roomName, requesterName)는 이 둘을 null로 남겨둔다.
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
@@ -23,6 +31,22 @@ public class Reservation{
         this.roomName = roomName;
         this.requesterName = requesterName;
         this.confirmed = false; // 아직 확인되면 안되니까 기본값은 false로 둔다.
+    }
+
+    // Day33 — 시간대가 있는 예약. 시간대가 없던 기존 생성자를 그대로 재사용해서(this(...))
+    // 두 생성자가 "확정 여부 초기값 false"라는 규칙을 중복 없이 공유하게 한다.
+    public Reservation(String roomName, String requesterName, LocalDateTime startAt, LocalDateTime endAt){
+        this(roomName, requesterName);
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
+    public LocalDateTime getStartAt(){
+        return startAt;
+    }
+
+    public LocalDateTime getEndAt(){
+        return endAt;
     }
 
     public void assignMember(Member member){

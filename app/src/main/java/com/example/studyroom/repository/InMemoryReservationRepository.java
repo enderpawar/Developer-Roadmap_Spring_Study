@@ -3,6 +3,7 @@ package com.example.studyroom.repository;
 import com.example.studyroom.domain.Reservation;
 //import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,5 +48,24 @@ public class InMemoryReservationRepository implements ReservationRepository {
         }
         return Optional.empty();
 
+    }
+
+    // Day33 — SpringDataReservationRepository.findOverlapping()의 JPQL과 같은 규칙을
+    // 순수 자바 컬렉션으로 그대로 옮긴 것. Unit 테스트(ReservationOverlapTest)가 DB 없이
+    // 이 규칙을 검증할 수 있는 이유가 이 메서드다.
+    @Override
+    public List<Reservation> findOverlapping(String roomName, LocalDateTime startAt, LocalDateTime endAt) {
+        List<Reservation> result = new ArrayList<>();
+        for (Reservation r : store) {
+            boolean sameRoom = r.getRoomName().equals(roomName);
+            boolean stillActive = r.isConfirmed();
+            boolean hasTimeSlot = r.getStartAt() != null && r.getEndAt() != null;
+            boolean overlaps = hasTimeSlot && r.getStartAt().isBefore(endAt) && startAt.isBefore(r.getEndAt());
+
+            if (sameRoom && stillActive && overlaps) {
+                result.add(r);
+            }
+        }
+        return result;
     }
 }
