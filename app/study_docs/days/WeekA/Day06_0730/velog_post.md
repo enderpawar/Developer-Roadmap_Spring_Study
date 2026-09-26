@@ -73,7 +73,7 @@ assignId(nextId++)
 
 `Long.valueOf` 문서는 범위 밖의 값도 **캐시할 수 있다**고 적는다. 즉 1000을 `==`로 비교하면 반드시 `false`라는 뜻도 아니다. 결과가 구현과 생성 경로에 달려 있으므로 값 비교 수단으로 믿을 수 없다는 것이 정확한 결론이다.
 
-![객체 다이어그램 세 구획. 첫째 구획에서 test 객체의 first와 second 두 링크가 같은 reservationService 인스턴스 하나를 가리키고, applicationContext도 그 하나를 관리하므로 first == second가 true이고 assertSame이 통과한다. 둘째 구획에서 r의 id 링크는 value 1000인 storedId, findById의 인수 링크는 value 1000인 requestedId를 가리켜 인스턴스가 둘이므로 == 결과는 보장되지 않고 equals는 true다. 셋째 구획에서 value 1인 Long은 캐시된 인스턴스 하나를 두 링크가 공유해 ==가 우연히 true일 수 있다. Long 구획은 캐시 규칙에 따른 도식이며 실행 측정은 하지 않았다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day06-reference-identity.png)
+![객체 다이어그램 세 구획. 첫째 구획에서 test 객체의 first와 second 두 링크가 같은 reservationService 인스턴스 하나를 가리키고, applicationContext도 그 하나를 관리하므로 first == second가 true이고 assertSame이 통과한다. 둘째 구획에서 r의 id 링크는 value 1000인 storedId, findById의 인수 링크는 value 1000인 requestedId를 가리켜 인스턴스가 둘이므로 == 결과는 보장되지 않고 equals는 true다. 셋째 구획에서 value 1인 Long은 캐시된 인스턴스 하나를 두 링크가 공유해 ==가 우연히 true일 수 있다. Long 구획은 캐시 규칙에 따른 도식이며 실행 측정은 하지 않았다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day06-reference-identity.png)
 
 이 함정은 Day04에서 처음 만났다. 당시 `findById()`에서 `.equals()`를 쓴 이유를 "null값 탐지"라고 답했다가 교정했고, D6 누적시험의 `Long` 값 비교 문항은 통과했다.
 
@@ -110,7 +110,7 @@ Service는 요청마다 새로 만들 필요가 없다. 상태 없이 규칙만 
 
 Spring 공식 문서는 Bean 정의 하나에서 인스턴스가 한 번만 만들어지고, 그 같은 인스턴스가 협력 객체마다 주입되는 구조를 다음처럼 그린다.
 
-![Spring Singleton scope 도식. 오른쪽의 accountDao Bean 정의 하나에서 인스턴스가 한 번만 생성되고(원 안의 1), 그 같은 공유 인스턴스가 화살표를 따라 왼쪽의 세 협력 Bean 정의에 ref="accountDao"로 각각 주입된다. 위 문구는 Only one instance is ever created, 아래 문구는 and this same shared instance is injected into each collaborating object다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day06-web-singleton-scope.png)
+![Spring Singleton scope 도식. 오른쪽의 accountDao Bean 정의 하나에서 인스턴스가 한 번만 생성되고(원 안의 1), 그 같은 공유 인스턴스가 화살표를 따라 왼쪽의 세 협력 Bean 정의에 ref="accountDao"로 각각 주입된다. 위 문구는 Only one instance is ever created, 아래 문구는 and this same shared instance is injected into each collaborating object다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day06-web-singleton-scope.png)
 
 *출처: [Spring Framework Reference — Bean Scopes, The Singleton Scope](https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html) — Copyright © 2005 - Broadcom. All Rights Reserved. (문서 사본은 무료 배포와 저작권 고지 유지 조건으로 허용)*
 
@@ -298,7 +298,7 @@ for (Reservation r : store) {
 
 테스트 통과는 코드 상태의 증거이며 인출 답안 자체를 대신하지 않는다.
 
-검증 코드와 Day06·07 산출물: [commit `6c88dcb`](https://github.com/enderpawar/8week_Spring_Study/commit/6c88dcb)
+검증 코드와 Day06·07 산출물: [commit `6c88dcb`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/6c88dcb)
 
 ## 3. 스스로 답한 질문
 
@@ -336,7 +336,7 @@ Controller의 생성자 모양을 그대로 복사하는 것이 아니라, 현�
 
 `==`와 `.equals()`의 차이는 결국 Stack의 변수가 Heap의 어느 객체를 가리키는지의 문제다. Singleton Bean과 `Long`에도 그대로 적용되는 이 구조를 가장 흔한 String 예시로 한 장에 모으면 다음과 같다(`a == c`는 true, `b == d`는 false, `.equals()`는 모두 true).
 
-![Stack 영역의 변수 a, b, c, d가 Heap 영역의 객체를 가리키는 그림. a와 c는 Heap 안 String Pool의 "apple" 객체 하나를 함께 가리키고, b와 d는 new String("apple")로 만든 서로 다른 두 객체를 각각 가리킨다. 따라서 a == c는 같은 참조라 true, b == d는 다른 참조라 false이며, 값은 모두 "apple"이다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day06-overview-reference-equality.png)
+![Stack 영역의 변수 a, b, c, d가 Heap 영역의 객체를 가리키는 그림. a와 c는 Heap 안 String Pool의 "apple" 객체 하나를 함께 가리키고, b와 d는 new String("apple")로 만든 서로 다른 두 객체를 각각 가리킨다. 따라서 a == c는 같은 참조라 true, b == d는 다른 참조라 false이며, 값은 모두 "apple"이다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day06-overview-reference-equality.png)
 
 *출처: [[자바] 문자열 비교하기 ==와 equals의 차이](https://velog.io/@beneficial/%EC%9E%90%EB%B0%94-%EB%AC%B8%EC%9E%90%EC%97%B4-%EB%B9%84%EA%B5%90%ED%95%98%EA%B8%B0-%EC%99%80-equals%EC%9D%98-%EC%B0%A8%EC%9D%B4) — Romy(velog @beneficial). 저작권은 원저작자에게 있습니다.*
 

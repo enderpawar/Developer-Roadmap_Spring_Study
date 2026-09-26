@@ -29,4 +29,4 @@ Domain 분리 이유를 설명하다가 "DTO는 Data Type object라서"라고 �
 
 ---
 
-오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/8week_Spring_Study/tree/master/app)
+오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)

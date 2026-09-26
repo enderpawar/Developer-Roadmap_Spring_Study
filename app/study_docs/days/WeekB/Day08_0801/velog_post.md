@@ -33,7 +33,7 @@ CREATE TABLE reservation (
 
 Flyway 공식 문서는 같은 소프트웨어와 DB가 개발자 PC, CI, 테스트, 운영 환경마다 한 벌씩 따로 존재하는 상황을 다음처럼 그린다.
 
-![개발자 두 명의 PC(Axel's Machine, Christian's Machine)에 각각 Shiny Soft와 Shiny DB가 있고, 두 PC에서 Continuous Integration 환경으로 화살표가 모인 뒤 Test, Production 환경으로 이어진다. 네 종류의 환경마다 소프트웨어와 DB가 한 벌씩 따로 있다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day08-web-flyway-environments.png)
+![개발자 두 명의 PC(Axel's Machine, Christian's Machine)에 각각 Shiny Soft와 Shiny DB가 있고, 두 PC에서 Continuous Integration 환경으로 화살표가 모인 뒤 Test, Production 환경으로 이어진다. 네 종류의 환경마다 소프트웨어와 DB가 한 벌씩 따로 있다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day08-web-flyway-environments.png)
 
 *출처: [Why database migrations — Redgate Flyway Documentation](https://documentation.red-gate.com/fd/why-database-migrations-184127574.html) — Copyright 1999 - 2026 Red Gate Software Ltd. All rights reserved.*
 
@@ -74,7 +74,7 @@ Spring Boot 컨텍스트 기동
 
 첫 기동 로그가 이 순서를 그대로 보여줬다. `Schema history table does not exist yet` → `Creating Schema History table ...` → `Current version of schema "PUBLIC": << Empty Schema >>` → `Migrating schema "PUBLIC" to version "1 - init"` 순이었다. 두 번째 분기는 Day09 재기동 때 `No migration necessary`로, 세 번째 분기는 오늘의 체크섬 실험(1절 3))으로 확인했다.
 
-![시퀀스 다이어그램. 참여자는 Spring Boot 컨텍스트 기동, Flyway, H2 파일 DB의 flyway_schema_history, db/migration의 V1__init.sql이다. Spring Boot가 migrate()를 호출하면 Flyway는 V<버전>__<설명>.sql 파일을 스캔해 V1__init.sql을 받고, 파일 전체의 체크섬을 계산한 뒤 장부를 조회해 적용 이력을 받는다. alt 프레임의 첫 경우인 장부에 V1이 없는 첫 기동에서는 장부 테이블 생성, CREATE TABLE reservation 실행, success = TRUE 이력 기록 후 version "1 - init"을 돌려준다. 둘째 경우인 파일 체크섬과 장부 체크섬이 같으면 V1을 건너뛰고 No migration necessary를 돌려준다. 셋째 경우인 체크섬이 다르면 붉은 경로로 FlywayValidateException이 전달되고 기동이 실패한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day08-flyway-startup.png)
+![시퀀스 다이어그램. 참여자는 Spring Boot 컨텍스트 기동, Flyway, H2 파일 DB의 flyway_schema_history, db/migration의 V1__init.sql이다. Spring Boot가 migrate()를 호출하면 Flyway는 V<버전>__<설명>.sql 파일을 스캔해 V1__init.sql을 받고, 파일 전체의 체크섬을 계산한 뒤 장부를 조회해 적용 이력을 받는다. alt 프레임의 첫 경우인 장부에 V1이 없는 첫 기동에서는 장부 테이블 생성, CREATE TABLE reservation 실행, success = TRUE 이력 기록 후 version "1 - init"을 돌려준다. 둘째 경우인 파일 체크섬과 장부 체크섬이 같으면 V1을 건너뛰고 No migration necessary를 돌려준다. 셋째 경우인 체크섬이 다르면 붉은 경로로 FlywayValidateException이 전달되고 기동이 실패한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day08-flyway-startup.png)
 
 같은 SQL이 두 번 돌지 않고, 빈 DB든 쓰던 DB든 결국 같은 상태에 도달하고, 이미 적용된 파일이 바뀌면 기동이 멈춘다. 세 성질은 모두 장부 하나에서 나온다.
 
@@ -260,7 +260,7 @@ Message : Syntax error in SQL statement
 | `NOT NULL`이 `NULL`을 막는지 | H2 콘솔에서 직접 INSERT | 거부(`23502`) |
 | 체크섬 불일치 시 기동 | 주석 추가 후 `./gradlew test` | 컨텍스트 기동 실패, 10개 중 6개 실패 |
 
-원복 후 테스트는 전원 통과했다. 커밋: [d2e9d55](https://github.com/enderpawar/8week_Spring_Study/commit/d2e9d557255a4bd3c9870f355383b3c04847ce7d)
+원복 후 테스트는 전원 통과했다. 커밋: [d2e9d55](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/d2e9d557255a4bd3c9870f355383b3c04847ce7d)
 
 H2 콘솔 조회와 INSERT 실험은 수동 확인이고 자동 테스트로 고정하지는 않았다. 실험 데이터는 모두 삭제해 `reservation`을 0행으로 남겼다. 앱이 이 테이블을 실제로 읽고 쓰는 경로는 아직 없다.
 
@@ -329,7 +329,7 @@ UPDATE reservation SET room_name = 'B202';
 
 오늘 다룬 Flyway가 `db/migration`의 버전 파일을 스키마 히스토리 장부와 대조해 아직 적용되지 않은 버전만 순서대로 실행하는 전체 흐름을 한 장으로 모으면 다음과 같다.
 
-![왼쪽 Migrations 폴더에 V1__CreatingBaseTables.sql, V2__ConstraintsAndFKs.sql, V3__AddIndexes.sql, V4__ViewsAndFunctions.sql 네 파일이 있다. Flyway가 Execute 화살표로 Current version V2 데이터베이스에 적용하고, 점선을 따라 New Version V4 데이터베이스가 된다. V2 위의 Schema History table에는 V1·V2가 SUCCESS, V3·V4가 PENDING으로 적혀 있고, V4 위의 표에는 V1~V4가 모두 SUCCESS로 기록돼 있다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day08-overview-flyway-migrate.png)
+![왼쪽 Migrations 폴더에 V1__CreatingBaseTables.sql, V2__ConstraintsAndFKs.sql, V3__AddIndexes.sql, V4__ViewsAndFunctions.sql 네 파일이 있다. Flyway가 Execute 화살표로 Current version V2 데이터베이스에 적용하고, 점선을 따라 New Version V4 데이터베이스가 된다. V2 위의 Schema History table에는 V1·V2가 SUCCESS, V3·V4가 PENDING으로 적혀 있고, V4 위의 표에는 V1~V4가 모두 SUCCESS로 기록돼 있다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day08-overview-flyway-migrate.png)
 
 *출처: [The Flyway Migrate Command Explained Simply](https://www.red-gate.com/hub/product-learning/flyway/the-flyway-migrate-command-explained-simply/) — Phil Factor, Redgate Hub Product Learning. 저작권은 원저작자에게 있습니다. Copyright © Red Gate Software Limited. All rights reserved.*
 

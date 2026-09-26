@@ -163,7 +163,7 @@ D6·D7 통합 글은 아래의 일반 H2 네 개를 강제로 따르지 않는�
 그림이 필요한 Full 소재(3절 「시각 자료 선택 의무」 기준 충족)는 여기서 전체 흐름 그림 1장을 바로 보여준다. 아직 개념을 모르는 독자도 대체텍스트와 그림만으로 전체 구조를 훑을 수 있어야 한다. 이 그림은 여기서 한 번만 쓰고, 4절에서 반복하지 않는다.
 
 ```markdown
-![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/dayNN-overview-....png)
+![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/dayNN-overview-....png)
 ```
 
 ## 1. 개념 설명
@@ -208,7 +208,7 @@ D6·D7 통합 글은 아래의 일반 H2 네 개를 강제로 따르지 않는�
 흐름·구조가 핵심인 소절에는 그림을 넣는다(UML 자체 제작 또는 출처를 밝힌 외부 그림). 경로는 GitHub raw URL만 쓰고 아래에 주석을 달지 않는다.
 
 ```markdown
-![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/dayNN-....png)
+![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/dayNN-....png)
 ```
 
 문단은 2~3줄로 끊는다. 4~6줄짜리 문단을 연속으로 두지 않는다.
@@ -436,7 +436,7 @@ chrome.exe --headless=old --disable-gpu --hide-scrollbars \
 MD 본문에는 **저장소 PNG의 GitHub raw URL**을 건다. IntelliJ 미리보기와 Velog가 같은 URL을 그대로 렌더링하므로, 붙여넣기만 하면 이미지가 뜨고 드래그 교체가 필요 없다. 프로젝트 경로에 한글·공백("바탕 화면")이 있어 로컬 상대 경로는 IntelliJ 미리보기에서 깨진다.
 
 ```markdown
-![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/dayNN-주제.png)
+![흐름 설명 대체텍스트](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/dayNN-주제.png)
 ```
 
 - 이미지 줄 아래에 업로드 안내 주석을 달지 않는다. 경로만 둔다.

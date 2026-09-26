@@ -90,7 +90,7 @@ public String reserve(@RequestBody @Valid ReservationRequest request) {
 
 예외는 메서드 본문이 실행되기 **전에** 던져진다. 따라서 `new Reservation(...)`도 `confirm()`도 실행되지 않고, 잘못된 값은 도메인 객체로 옮겨가지 못한다.
 
-![시퀀스 다이어그램. 클라이언트가 roomName이 빈 문자열인 JSON을 POST하면 DispatcherServlet이 자기 자신에게 @RequestBody 변환과 @Valid 검사를 수행한다. alt 프레임의 첫 분기(검증 통과)에서는 ReservationController.reserve()가 호출되고 200 OK가 돌아간다. 두 번째 분기(검증 실패, MethodArgumentNotValidException)에서는 GlobalExceptionHandler.handleValidation()이 호출돼 400과 roomName 키만 담긴 Map이 반환되는데, 이 분기에서 ReservationController 생명선은 한 번도 닿지 않는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day03-validation-flow.png)
+![시퀀스 다이어그램. 클라이언트가 roomName이 빈 문자열인 JSON을 POST하면 DispatcherServlet이 자기 자신에게 @RequestBody 변환과 @Valid 검사를 수행한다. alt 프레임의 첫 분기(검증 통과)에서는 ReservationController.reserve()가 호출되고 200 OK가 돌아간다. 두 번째 분기(검증 실패, MethodArgumentNotValidException)에서는 GlobalExceptionHandler.handleValidation()이 호출돼 400과 roomName 키만 담긴 Map이 반환되는데, 이 분기에서 ReservationController 생명선은 한 번도 닿지 않는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day03-validation-flow.png)
 
 > **보장 범위** — 그림은 변환과 검증을 `DispatcherServlet`의 자기 호출로 묶어 단순화했다. 실제로는 `DispatcherServlet`이 호출하는 인수 처리 단계에서 일어나며, 그 내부 클래스는 오늘 열어보지 않았다.
 
@@ -264,7 +264,7 @@ public class GlobalExceptionHandler {
 - **수동 확인** — 위 표의 `curl` 호출 한 건.
 - **미검증** — `cancel()`의 검증 미실행, `handleUnexpected()`의 500 경로.
 
-오늘 코드는 [`306100f` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/306100f660de477643481eea8debd0a8b5de4e84)에 있다.
+오늘 코드는 [`306100f` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/306100f660de477643481eea8debd0a8b5de4e84)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -298,7 +298,7 @@ public class GlobalExceptionHandler {
 
 오늘 따라간 경로를 한 장으로 모으면 다음과 같다. ②③의 인자 처리에서 검증을 통과하면 ④ `reserve()`로 가고, 위반이 있으면 빨간 경로로 빠져 ⑤⑥을 거쳐 400이 된다.
 
-![전체 흐름도. Client가 POST /reservations를 보내면 ① DispatcherServlet이 요청을 받고, "인자 처리 · @RequestBody @Valid" 영역에서 ② HttpMessageConverter가 JSON을 ReservationRequest로 바꾼 뒤 ③ Bean Validation이 @NotBlank를 검사한다. 검증을 통과하면 ④ ReservationController.reserve()가 실행돼 200 OK와 예약 완료 문자열이 Client로 돌아간다. 위반이 있으면 빨간 점선으로 MethodArgumentNotValidException이 발생하고 reserve() 본문은 실행되지 않는다. DispatcherServlet이 위임한 ⑤ ExceptionHandlerExceptionResolver가 @RestControllerAdvice 영역의 ⑥ GlobalExceptionHandler.handleValidation()을 실행하고, 400 Bad Request와 {"roomName":"방 이름은 비어있을 수 없습니다"}가 Client로 돌아간다. 하단 주석은 규칙은 DTO 필드, 실행 지시는 파라미터에 있고 응답 본문에는 실패한 필드만 담긴다고 적는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day03-overview-validation-flow.png)
+![전체 흐름도. Client가 POST /reservations를 보내면 ① DispatcherServlet이 요청을 받고, "인자 처리 · @RequestBody @Valid" 영역에서 ② HttpMessageConverter가 JSON을 ReservationRequest로 바꾼 뒤 ③ Bean Validation이 @NotBlank를 검사한다. 검증을 통과하면 ④ ReservationController.reserve()가 실행돼 200 OK와 예약 완료 문자열이 Client로 돌아간다. 위반이 있으면 빨간 점선으로 MethodArgumentNotValidException이 발생하고 reserve() 본문은 실행되지 않는다. DispatcherServlet이 위임한 ⑤ ExceptionHandlerExceptionResolver가 @RestControllerAdvice 영역의 ⑥ GlobalExceptionHandler.handleValidation()을 실행하고, 400 Bad Request와 {"roomName":"방 이름은 비어있을 수 없습니다"}가 Client로 돌아간다. 하단 주석은 규칙은 DTO 필드, 실행 지시는 파라미터에 있고 응답 본문에는 실패한 필드만 담긴다고 적는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day03-overview-validation-flow.png)
 
 ### 2) 이해의 변화와 남은 것
 
@@ -314,4 +314,4 @@ public class GlobalExceptionHandler {
 
 ---
 
-오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/exception/GlobalExceptionHandler.java`, `controller/ReservationController.java`, `dto/ReservationRequest.java` ([`306100f`](https://github.com/enderpawar/8week_Spring_Study/commit/306100f660de477643481eea8debd0a8b5de4e84))
+오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/exception/GlobalExceptionHandler.java`, `controller/ReservationController.java`, `dto/ReservationRequest.java` ([`306100f`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/306100f660de477643481eea8debd0a8b5de4e84))

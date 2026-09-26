@@ -47,7 +47,7 @@ SpringApplication.run() → ApplicationContext 기동
 
 Spring Framework 공식 문서는 애플리케이션 클래스와 설정 메타데이터가 컨테이너에 들어가 완성된 시스템이 되는 이 구조를 다음처럼 그린다.
 
-![Spring IoC 컨테이너 개요도. 위에서 Your Business Objects (POJOs)가, 왼쪽에서 Configuration Metadata가 The Spring Container로 들어가고, 컨테이너가 produces 화살표로 Fully configured system Ready for Use를 만들어 낸다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day05-web-spring-ioc-container.png)
+![Spring IoC 컨테이너 개요도. 위에서 Your Business Objects (POJOs)가, 왼쪽에서 Configuration Metadata가 The Spring Container로 들어가고, 컨테이너가 produces 화살표로 Fully configured system Ready for Use를 만들어 낸다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day05-web-spring-ioc-container.png)
 
 *출처: [Container Overview — Spring Framework Reference, Figure 1. The Spring IoC container](https://docs.spring.io/spring-framework/reference/core/beans/basics.html) — Copyright © 2005 - Broadcom. All Rights Reserved. (문서 사본은 무료 배포와 저작권 고지 유지 조건으로 허용)*
 
@@ -90,7 +90,7 @@ this.x의 x = 그 클래스에 실제로 선언된 필드
 매개변수 타입 = 그 필드에 대입 가능한 타입
 ```
 
-![클래스 다이어그램. «@RestController» ReservationController가 «@Service» ReservationService를, ReservationService가 «interface» ReservationRepository를 각각 생성자 주입으로 참조한다. «@Repository» InMemoryReservationRepository는 그 인터페이스를 «realize»하는데, 화살표가 구현체가 아니라 인터페이스로 향하는 것이 요점이다. Service는 구현체 이름을 모른다. 주석에는 ApplicationContext가 기동 시 Bean을 만들고 생성자 인자 타입에 맞는 Bean을 찾아 넣는다는 것, 기본 scope가 singleton이라 두 번 꺼내도 같은 인스턴스여서 ==가 true이고 그래서 Service가 무상태여야 한다는 것, @Repository를 떼면 넣어줄 Bean이 없어 기동에서 실패한다는 것이 적혀 있다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day05-ioc-di.png)
+![클래스 다이어그램. «@RestController» ReservationController가 «@Service» ReservationService를, ReservationService가 «interface» ReservationRepository를 각각 생성자 주입으로 참조한다. «@Repository» InMemoryReservationRepository는 그 인터페이스를 «realize»하는데, 화살표가 구현체가 아니라 인터페이스로 향하는 것이 요점이다. Service는 구현체 이름을 모른다. 주석에는 ApplicationContext가 기동 시 Bean을 만들고 생성자 인자 타입에 맞는 Bean을 찾아 넣는다는 것, 기본 scope가 singleton이라 두 번 꺼내도 같은 인스턴스여서 ==가 true이고 그래서 Service가 무상태여야 한다는 것, @Repository를 떼면 넣어줄 Bean이 없어 기동에서 실패한다는 것이 적혀 있다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day05-ioc-di.png)
 
 > **보장 범위** — 오늘 사용한 주입 방식은 생성자 주입 하나다. 필드 주입·setter 주입은 비교해 실행하지 않았고, 생성자가 하나뿐일 때 `@Autowired` 없이 주입되는 규칙도 이번 코드에서 관찰한 결과까지만 다룬다.
 
@@ -113,7 +113,7 @@ public interface ReservationRepository {
 
 Wikimedia Commons의 DIP 도식은 구체 클래스를 직접 참조하던 의존이 인터페이스를 향하도록 바뀌는 전후를 다음처럼 비교한다.
 
-![의존성 역전 전후 비교도. Figure 1에서는 Package A의 Object A가 Package B의 Object B를 직접 References한다. Figure 2에서는 Object A가 같은 Package A 안의 Interface A를 References하고, Package B의 Object B가 Interface A를 Inherits해서 의존 화살표가 구현체가 아니라 인터페이스로 향한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day05-web-dependency-inversion.png)
+![의존성 역전 전후 비교도. Figure 1에서는 Package A의 Object A가 Package B의 Object B를 직접 References한다. Figure 2에서는 Object A가 같은 Package A 안의 Interface A를 References하고, Package B의 Object B가 Interface A를 Inherits해서 의존 화살표가 구현체가 아니라 인터페이스로 향한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day05-web-dependency-inversion.png)
 
 *출처: [File:Dependency inversion.png — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dependency_inversion.png) — Kevin Martin (Mrflay), CC BY-SA 4.0*
 
@@ -156,7 +156,7 @@ public class InMemoryReservationRepository implements ReservationRepository { //
 
 컴파일러는 타입 그래프를, 컨테이너는 기동 시점에 Bean 그래프를 검사한다. 인터페이스를 구현했다는 사실만으로 Bean이 되지는 않으므로, 애노테이션 누락은 두 번째 검사에서만 드러난다.
 
-![시퀀스 다이어그램. 참여자는 테스트 실행, ApplicationContext, «@Repository» InMemoryReservationRepository, «@Service» ReservationService, «@RestController» ReservationController다. 먼저 compileJava가 성공하고, 테스트가 contextLoads()로 컨텍스트를 기동하면 ApplicationContext가 Component Scan과 생성자 인자 후보 탐색을 수행한다. alt 프레임의 첫 분기 [@Repository 있음]에서는 ① Repository 생성, ② repository를 Service 생성자에 주입, ③ service를 Controller 생성자에 주입한 뒤 기동 성공과 BUILD SUCCESSFUL을 돌려준다. 둘째 분기 [@Repository 제거]에서는 후보 Bean이 없어 NoSuchBeanDefinitionException이 테스트로 전달되고 contextLoads()가 실패한다. 하단 주석은 두 경우 모두 compileJava가 성공했고 사라진 것은 Bean 등록이라고 적는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day05-bean-assembly.png)
+![시퀀스 다이어그램. 참여자는 테스트 실행, ApplicationContext, «@Repository» InMemoryReservationRepository, «@Service» ReservationService, «@RestController» ReservationController다. 먼저 compileJava가 성공하고, 테스트가 contextLoads()로 컨텍스트를 기동하면 ApplicationContext가 Component Scan과 생성자 인자 후보 탐색을 수행한다. alt 프레임의 첫 분기 [@Repository 있음]에서는 ① Repository 생성, ② repository를 Service 생성자에 주입, ③ service를 Controller 생성자에 주입한 뒤 기동 성공과 BUILD SUCCESSFUL을 돌려준다. 둘째 분기 [@Repository 제거]에서는 후보 Bean이 없어 NoSuchBeanDefinitionException이 테스트로 전달되고 contextLoads()가 실패한다. 하단 주석은 두 경우 모두 compileJava가 성공했고 사라진 것은 Bean 등록이라고 적는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day05-bean-assembly.png)
 
 실험 전에는 "애플리케이션 실행 단계에서 실패할 것"이라고 단계는 맞췄다. 다만 이유를 "구현 클래스가 저장소 인터페이스 역할을 잃는다"고 설명했다. Java 역할은 그대로였고, 잃은 것은 Spring Bean 자격이었다.
 
@@ -240,7 +240,7 @@ singleton이라는 조립 규칙은 곧바로 설계 제약으로 이어진다. 
 
 ### 1) Day4 주석 제거와 Service 생성자
 
-[`4a0219a` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/4a0219a)의 `ReservationService` 앞부분이다.
+[`4a0219a` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/4a0219a)의 `ReservationService` 앞부분이다.
 
 ```java
 @Service
@@ -314,7 +314,7 @@ void reservationServiceBeanIsSingleton() {
 
 **미검증** — 공유 Service 필드가 만드는 경쟁 상태, `InMemoryReservationRepository`의 `ArrayList` 동시성. 둘 다 실행으로 재현하지 않았다.
 
-오늘 코드는 [`4a0219a` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/4a0219a)에 있다.
+오늘 코드는 [`4a0219a` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/4a0219a)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -350,7 +350,7 @@ void reservationServiceBeanIsSingleton() {
 
 오늘 따라간 경로를 기동부터 요청 처리까지 한 장으로 모으면 다음과 같다. ②~⑦은 기동 시점에 한 번 일어나고, ⑧의 요청은 ⑦에 보관된 같은 인스턴스를 재사용한다.
 
-![전체 흐름도. ① 애플리케이션 시작에서 SpringApplication.run()이 호출되면 ApplicationContext 기동 영역으로 들어가 ② Component Scan이 @Repository·@Service·@RestController 클래스를 수집하고 ③ Bean 정의를 등록한다. 이어 ④ InMemoryReservationRepository, ⑤ ReservationService(ReservationRepository), ⑥ ReservationController(ReservationService) 순서로 생성되며 앞의 Bean이 다음 생성자에 주입된다. 세 Bean은 ⑦ Singleton Bean 보관 영역으로 모이고, getBean(ReservationService.class)을 두 번 호출해도 assertSame이 통과한다. @Repository를 제거하면 ④에서 빨간 점선으로 빠져 NoSuchBeanDefinitionException으로 기동이 실패한다. ⑧ 요청 처리 영역에서는 Client의 POST /reservations가 DispatcherServlet을 거쳐 ReservationController.reserve(), ReservationService.reserve(), InMemoryReservationRepository.save()로 이어지며 보관된 같은 인스턴스를 사용한다. 하단 주석은 생성 순서가 Repository → Service → Controller이고 요청의 호출 순서는 그 반대라고 적는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day05-overview-ioc-container.png)
+![전체 흐름도. ① 애플리케이션 시작에서 SpringApplication.run()이 호출되면 ApplicationContext 기동 영역으로 들어가 ② Component Scan이 @Repository·@Service·@RestController 클래스를 수집하고 ③ Bean 정의를 등록한다. 이어 ④ InMemoryReservationRepository, ⑤ ReservationService(ReservationRepository), ⑥ ReservationController(ReservationService) 순서로 생성되며 앞의 Bean이 다음 생성자에 주입된다. 세 Bean은 ⑦ Singleton Bean 보관 영역으로 모이고, getBean(ReservationService.class)을 두 번 호출해도 assertSame이 통과한다. @Repository를 제거하면 ④에서 빨간 점선으로 빠져 NoSuchBeanDefinitionException으로 기동이 실패한다. ⑧ 요청 처리 영역에서는 Client의 POST /reservations가 DispatcherServlet을 거쳐 ReservationController.reserve(), ReservationService.reserve(), InMemoryReservationRepository.save()로 이어지며 보관된 같은 인스턴스를 사용한다. 하단 주석은 생성 순서가 Repository → Service → Controller이고 요청의 호출 순서는 그 반대라고 적는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day05-overview-ioc-container.png)
 
 ### 2) 이해의 변화와 남은 것
 
@@ -369,4 +369,4 @@ void reservationServiceBeanIsSingleton() {
 
 ---
 
-오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/service/ReservationService.java`, `app/src/main/java/com/example/studyroom/controller/ReservationController.java`, `app/src/test/java/com/example/studyroom/StudyRoomApiApplicationTests.java` ([`4a0219a`](https://github.com/enderpawar/8week_Spring_Study/commit/4a0219a))
+오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/service/ReservationService.java`, `app/src/main/java/com/example/studyroom/controller/ReservationController.java`, `app/src/test/java/com/example/studyroom/StudyRoomApiApplicationTests.java` ([`4a0219a`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/4a0219a))

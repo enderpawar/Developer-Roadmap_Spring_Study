@@ -9,7 +9,7 @@ Day17까지 `Reservation`은 예약자를 `String requesterName`으로 저장했
 > 이전 Day: self-invocation과 Transaction Boundary의 프록시 우회 (Day16)
 > 다음 Day: N+1 확인과 fetch join (Week C D5)
 
-![시퀀스 다이어그램. 참여자는 테스트, ReservationRepository, Reservation.member(Member$HibernateProxy)다. entityManager.clear() 이후 findById(id)를 호출하면 ReservationRepository가 reservation 테이블만 SELECT하고 member_id 컬럼값을 포함해 반환하며, member 필드는 아직 초기화 안 된 프록시다. 이어서 getMember().getClass()를 호출하면 SELECT 없이 즉시 Member$HibernateProxy를 반환한다. 마지막으로 getMember().getName()을 호출하는 순간에만 member 테이블에 대한 SELECT가 실행되어 초기화되고 "진우"가 반환된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day18-lazy-proxy-init.png)
+![시퀀스 다이어그램. 참여자는 테스트, ReservationRepository, Reservation.member(Member$HibernateProxy)다. entityManager.clear() 이후 findById(id)를 호출하면 ReservationRepository가 reservation 테이블만 SELECT하고 member_id 컬럼값을 포함해 반환하며, member 필드는 아직 초기화 안 된 프록시다. 이어서 getMember().getClass()를 호출하면 SELECT 없이 즉시 Member$HibernateProxy를 반환한다. 마지막으로 getMember().getName()을 호출하는 순간에만 member 테이블에 대한 SELECT가 실행되어 초기화되고 "진우"가 반환된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day18-lazy-proxy-init.png)
 
 ## 1. 개념 설명
 

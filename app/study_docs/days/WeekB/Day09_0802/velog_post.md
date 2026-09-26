@@ -40,7 +40,7 @@ ReservationService
 
 Wikimedia Commons의 JDBC 구조도는 애플리케이션이 JDBC API와 DriverManager/DataSource만 거치고, DB별 차이는 각 JDBC 드라이버가 맡는 구조를 다음처럼 그린다(그림의 `Base de Données`는 프랑스어로 "데이터베이스").
 
-![구조도. 맨 위 Java 애플리케이션이 JDBC API와 양방향으로 연결되고, 그 아래 JDBC Driver Manager 또는 DataSource 객체가 있다. 그 아래에 MariaDB, PostgreSQL, Oracle용 JDBC 드라이버 세 개가 각각 DriverManager/DataSource에 연결되고, 각 드라이버는 자기 데이터베이스와 양방향으로 통신한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day09-web-jdbc-api-driver.png)
+![구조도. 맨 위 Java 애플리케이션이 JDBC API와 양방향으로 연결되고, 그 아래 JDBC Driver Manager 또는 DataSource 객체가 있다. 그 아래에 MariaDB, PostgreSQL, Oracle용 JDBC 드라이버 세 개가 각각 DriverManager/DataSource에 연결되고, 각 드라이버는 자기 데이터베이스와 양방향으로 통신한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day09-web-jdbc-api-driver.png)
 
 *출처: [File:DessinApiJDBC.svg — Wikimedia Commons](https://commons.wikimedia.org/wiki/File:DessinApiJDBC.svg) — Unareil, CC BY-SA 4.0 (PNG 렌더링·여백 자름)*
 
@@ -118,7 +118,7 @@ next() == false → 커서: 마지막 행 뒤 → 반복 종료
 | `next()` | 행이 있는지 판정 | 이동함 |
 | `getXxx("컬럼")` | 현재 행의 값 읽기 | 이동 안 함 |
 
-![시퀀스 다이어그램. 참여자는 JdbcReservationRepository, DataSource(HikariCP 풀), Connection, PreparedStatement, ResultSet(커서)이다. Repository가 getConnection()으로 풀에서 con을 대여하고, prepareStatement(sql)로 ps를 받고, executeQuery()로 첫 행 앞에 놓인 rs를 받는다. rs.next()가 true인 동안 도는 loop 프레임 안에서 next()는 다음 행으로 이동하며 true를 돌려주고, mapRow(rs)가 getXxx("컬럼명")로 현재 행의 값을 이동 없이 읽는다. 마지막 next()는 마지막 행 뒤에서 false를 돌려준다. 끝으로 ResultSet, PreparedStatement, Connection 순으로 close()하며 Connection은 풀에 반납된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day09-jdbc-cursor.png)
+![시퀀스 다이어그램. 참여자는 JdbcReservationRepository, DataSource(HikariCP 풀), Connection, PreparedStatement, ResultSet(커서)이다. Repository가 getConnection()으로 풀에서 con을 대여하고, prepareStatement(sql)로 ps를 받고, executeQuery()로 첫 행 앞에 놓인 rs를 받는다. rs.next()가 true인 동안 도는 loop 프레임 안에서 next()는 다음 행으로 이동하며 true를 돌려주고, mapRow(rs)가 getXxx("컬럼명")로 현재 행의 값을 이동 없이 읽는다. 마지막 next()는 마지막 행 뒤에서 false를 돌려준다. 끝으로 ResultSet, PreparedStatement, Connection 순으로 close()하며 Connection은 풀에 반납된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day09-jdbc-cursor.png)
 
 `findAll()`의 `while (rs.next())`가 이미 커서를 한 행씩 옮기고 있다. 그 안에서 호출되는 `mapRow()`는 "이미 정해진 한 행을 객체로 바꾸는" 자리다. 여기서 `next()`를 또 부르면 커서가 한 칸 더 가서 행이 하나 걸러 하나씩 사라진다. 컴파일도 되고 예외도 나지 않는 종류의 버그다.
 
@@ -345,7 +345,7 @@ POST /reservations/cancel/99 → {"error":"예약을 찾을 수 없습니다. (i
 POST /reservations/cancel/3  → jinwoo님이A101 예약을 취소하셨습니다   ← 만든 적 없는 번호
 ```
 
-Day4에 등록한 "프로세스를 재시작하면 데이터가 사라진다"는 부채는 이걸로 해소됐다. Flyway는 `V1`을 다시 실행하지 않고 장부만 확인하고 넘어갔다. 커밋: [293d260](https://github.com/enderpawar/8week_Spring_Study/commit/293d260)
+Day4에 등록한 "프로세스를 재시작하면 데이터가 사라진다"는 부채는 이걸로 해소됐다. Flyway는 `V1`을 다시 실행하지 않고 장부만 확인하고 넘어갔다. 커밋: [293d260](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/293d260)
 
 ## 3. 스스로 답한 질문
 
@@ -399,7 +399,7 @@ environment("SPRING_PROFILES_ACTIVE", "test")
 
 오늘 다룬 객체들이 애플리케이션과 DB 사이 어디에 놓이는지 먼저 한 장으로 보면 다음과 같다(Oracle UCP 그림이지만 구조는 같다. 우리 프로젝트에서는 가운데 풀 자리를 HikariCP가, `Connection Factory` 자리를 H2 JDBC 드라이버가 맡고, 애플리케이션은 풀에서 빌린 연결로 DB와 직접 대화한 뒤 `close()`로 풀에 반납한다).
 
-![개념 구조도. 왼쪽 위 Application은 아래의 Pool-Enabled Data Source와 양방향으로 연결되고, Data Source는 가운데 여러 연결(동그라미)을 담은 UCP JDBC Connection Pool과 이어진다. 풀은 오른쪽 Connection Factory와 이어지고, Connection Factory가 오른쪽 위 Database와 양방향으로 연결해 물리 연결을 만든다. 맨 위의 빨간 양방향 화살표는 Application이 풀에서 빌린 연결로 Database와 직접 작업함을 나타낸다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day09-overview-connection-pool.gif)
+![개념 구조도. 왼쪽 위 Application은 아래의 Pool-Enabled Data Source와 양방향으로 연결되고, Data Source는 가운데 여러 연결(동그라미)을 담은 UCP JDBC Connection Pool과 이어진다. 풀은 오른쪽 Connection Factory와 이어지고, Connection Factory가 오른쪽 위 Database와 양방향으로 연결해 물리 연결을 만든다. 맨 위의 빨간 양방향 화살표는 Application이 풀에서 빌린 연결로 Database와 직접 작업함을 나타낸다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day09-overview-connection-pool.gif)
 
 *출처: [Introduction to UCP — Figure 1-1 Conceptual View of a UCP JDBC Connection Pool](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/intro.html) — Oracle, Universal Connection Pool Developer's Guide 21c. 저작권은 원저작자에게 있습니다.*
 

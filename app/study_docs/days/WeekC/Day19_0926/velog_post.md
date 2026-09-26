@@ -9,7 +9,7 @@ Day18에서 `Reservation.member`를 `FetchType.LAZY`로 매핑하고, 프록시�
 > 이전 Day: Association Mapping과 Hibernate Proxy의 초기화 시점 (Day18)
 > 다음 Day: Day19 빈칸예제·독립 변형 이어서, 이후 누적시험 A+B+C (Week C D6)
 
-![시퀀스 다이어그램. 위쪽 프레임은 findAll()이다. 테스트가 ReservationRepository.findAll()을 호출하면 DB에 reservation 테이블 SELECT가 1번 나가고, member는 미초기화 Proxy 3개로 채워진 List가 반환된다. 이어지는 loop [3건] 안에서 getMember().getName()을 호출할 때마다 member 테이블 SELECT가 1번씩 나가 총 SQL은 1+3=4번이다. 아래쪽 프레임은 findAllWithMember()다. 호출 시 reservation과 member를 JOIN한 SQL 1번으로 member까지 초기화된 List가 반환되고, loop 안의 getName() 호출에서는 SQL이 나가지 않아 총 SQL은 1번이다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day19-nplusone-vs-fetch-join.png)
+![시퀀스 다이어그램. 위쪽 프레임은 findAll()이다. 테스트가 ReservationRepository.findAll()을 호출하면 DB에 reservation 테이블 SELECT가 1번 나가고, member는 미초기화 Proxy 3개로 채워진 List가 반환된다. 이어지는 loop [3건] 안에서 getMember().getName()을 호출할 때마다 member 테이블 SELECT가 1번씩 나가 총 SQL은 1+3=4번이다. 아래쪽 프레임은 findAllWithMember()다. 호출 시 reservation과 member를 JOIN한 SQL 1번으로 member까지 초기화된 List가 반환되고, loop 안의 getName() 호출에서는 SQL이 나가지 않아 총 SQL은 1번이다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day19-nplusone-vs-fetch-join.png)
 
 ## 1. 개념 설명
 
@@ -40,7 +40,7 @@ findAll() → select … from reservation (1번)
 
 같은 패턴은 방향이 반대인 연관관계에서도 나타난다. 아래는 다른 글의 로그로, `Member` 목록을 순회하며 `@OneToMany` 컬렉션 `orders`의 크기를 출력한 결과다. `where orders0_.member_id=?` SELECT가 회원 수만큼 똑같이 반복된다.
 
-![Hibernate SQL 로그 캡처. select … from orders orders0_ where orders0_.member_id=? 쿼리와 order size: 10 출력이 회원마다 한 번씩 계속 반복된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day19-web-nplusone-log.png)
+![Hibernate SQL 로그 캡처. select … from orders orders0_ where orders0_.member_id=? 쿼리와 order size: 10 출력이 회원마다 한 번씩 계속 반복된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day19-web-nplusone-log.png)
 
 *출처: [JPA N+1 발생원인과 해결 방법](https://www.popit.kr/jpa-n1-%EB%B0%9C%EC%83%9D%EC%9B%90%EC%9D%B8%EA%B3%BC-%ED%95%B4%EA%B2%B0-%EB%B0%A9%EB%B2%95/) — Yun(cheese10yun), Popit*
 
@@ -84,11 +84,11 @@ fetch join은 매핑을 바꾸지 않는다. `Reservation.member`는 여전히 `
 
 주의할 점은 로그의 `join`이 **inner join**이라는 것이다. 관계대수의 내부 조인처럼 `member_id`가 `null`인 예약은 결과에서 빠진다. 아래 그림에서 A를 `reservation`, B를 `member`로 놓으면, `join fetch`가 돌려주는 범위는 첫 번째 그림의 교집합이다.
 
-![두 원 A와 B의 교집합만 칠해진 벤 다이어그램. A Inner Join B는 양쪽에 짝이 있는 행만 결과에 남긴다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day19-web-inner-join.png)
+![두 원 A와 B의 교집합만 칠해진 벤 다이어그램. A Inner Join B는 양쪽에 짝이 있는 행만 결과에 남긴다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day19-web-inner-join.png)
 
 *출처: [File:SQL Join - 07 A Inner Join B.svg](https://commons.wikimedia.org/wiki/File:SQL_Join_-_07_A_Inner_Join_B.svg) — GermanX, Wikimedia Commons, CC BY-SA 4.0*
 
-![원 A 전체와 교집합이 칠해진 벤 다이어그램. A Left Join B는 B에 짝이 없는 A의 행도 결과에 남긴다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day19-web-left-join.png)
+![원 A 전체와 교집합이 칠해진 벤 다이어그램. A Left Join B는 B에 짝이 없는 A의 행도 결과에 남긴다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day19-web-left-join.png)
 
 *출처: [File:SQL Join - 01 A Left Join B.svg](https://commons.wikimedia.org/wiki/File:SQL_Join_-_01_A_Left_Join_B.svg) — GermanX, Wikimedia Commons, CC BY-SA 4.0*
 
@@ -159,7 +159,7 @@ JdbcReservationRepository is not abstract and does not override abstract method 
 
 두 테스트는 SQL 개수를 assert하지 않는다. 판정 근거는 테스트 통과가 아니라 로그를 사람이 센 결과다.
 
-커밋: [ee61c80](https://github.com/enderpawar/8week_Spring_Study/commit/ee61c8040300d21fb4926b47074ac7e91a8f4dd1)
+커밋: [ee61c80](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/ee61c8040300d21fb4926b47074ac7e91a8f4dd1)
 
 ## 3. 스스로 답한 질문
 

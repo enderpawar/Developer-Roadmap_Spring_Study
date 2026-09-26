@@ -170,4 +170,4 @@ Service 계층의 `getTodo(id)` 내부에서 발생한다. GET 단건 조회뿐 
 ---
 #Spring #SpringBoot #Backend #TIL #백엔드스터디 #REST #DTO #Repository패턴
 
-오늘 공부한 소스코드: [8week_Spring_Study/week1](https://github.com/enderpawar/8week_Spring_Study/tree/master/week1)
+오늘 공부한 소스코드: [8week_Spring_Study/week1](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/week1)

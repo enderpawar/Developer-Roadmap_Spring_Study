@@ -158,7 +158,7 @@ cancel(1) → findById(1): store를 돌며 getId().equals(1)인 r1 반환
 | 값이 같은 객체 | 필드 값 비교 | 이름 기반 `cancel()`의 r1, r2 |
 | 같은 대상 | 식별자 비교 | `findById(1)`이 돌려준 r1 |
 
-![객체 다이어그램 두 장. 위는 이름으로 취소했을 때로, store의 [0]과 [1]이 각각 r1과 r2라는 서로 다른 Reservation 인스턴스를 가리킨다. 둘 다 roomName이 "301호"로 값은 같지만 r1은 confirmed=true, r2는 false다. 취소한 건 r2뿐이라 기존 예약 r1은 그대로다. 아래는 id로 취소한 뒤로, 인스턴스는 id=1인 r1 하나인데 store의 [0]과 [1] 두 링크가 모두 그 하나를 가리킨다. save()가 ID 유무와 무관하게 store.add()를 실행하기 때문인데, 원소 수를 세는 테스트도 findAll() 엔드포인트도 없어 실제로 그런지는 확인하지 않았다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day04-identity-store.png)
+![객체 다이어그램 두 장. 위는 이름으로 취소했을 때로, store의 [0]과 [1]이 각각 r1과 r2라는 서로 다른 Reservation 인스턴스를 가리킨다. 둘 다 roomName이 "301호"로 값은 같지만 r1은 confirmed=true, r2는 false다. 취소한 건 r2뿐이라 기존 예약 r1은 그대로다. 아래는 id로 취소한 뒤로, 인스턴스는 id=1인 r1 하나인데 store의 [0]과 [1] 두 링크가 모두 그 하나를 가리킨다. save()가 ID 유무와 무관하게 store.add()를 실행하기 때문인데, 원소 수를 세는 테스트도 findAll() 엔드포인트도 없어 실제로 그런지는 확인하지 않았다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day04-identity-store.png)
 
 값이 같다는 것과 같은 대상이라는 것은 다르다. 상태를 바꾸려면 먼저 식별자로 대상을 지목해야 하고, 지목 수단이 없으면 "갱신"은 "추가"가 된다.
 
@@ -336,7 +336,7 @@ POST /reservations/cancel/1
 
 `findAll()`을 노출하는 엔드포인트가 없어서 `save()`가 같은 참조를 한 번 더 넣었는지는 확인할 방법이 없었다. 컨트롤러에는 빈 문자열을 보내면 `@Valid`가 400을 낼 것 같다는 추측 주석이 남아 있지만, 그 요청은 보내지 않았으므로 응답 본문은 추측하지 않는다.
 
-오늘 코드는 [`e22bb34` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/e22bb34)에 있다. 앞선 `reserve()` 경로 분리는 [`d6320e2`](https://github.com/enderpawar/8week_Spring_Study/commit/d6320e2)다.
+오늘 코드는 [`e22bb34` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/e22bb34)에 있다. 앞선 `reserve()` 경로 분리는 [`d6320e2`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/d6320e2)다.
 
 ## 3. 스스로 답한 질문
 
@@ -362,7 +362,7 @@ POST /reservations/cancel/1
 
 오늘 나눈 Controller·Service·Repository가 요청 흐름 전체에서 어디에 놓이는지 한 장으로 보면 다음과 같다. 그림의 Database 자리는 오늘 코드에서 메모리 저장소(`InMemoryReservationRepository`)가 맡고, JPA로 DB에 연결하는 단계는 이후에 다룬다.
 
-![Spring Boot 계층형 구조의 요청 흐름. 왼쪽 Client가 Controller Layer에 Request를 보내고 Response를 돌려받는다. Controller는 Service Layer와 양방향으로 주고받고, Service는 위쪽 Model과 데이터를 주고받으며 오른쪽 Repository Layer를 호출한다. Repository는 CRUD/Native Query로 Database와 통신하고, Model은 JPA로 Database 테이블에 매핑된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day04-overview-layered-architecture.gif)
+![Spring Boot 계층형 구조의 요청 흐름. 왼쪽 Client가 Controller Layer에 Request를 보내고 Response를 돌려받는다. Controller는 Service Layer와 양방향으로 주고받고, Service는 위쪽 Model과 데이터를 주고받으며 오른쪽 Repository Layer를 호출한다. Repository는 CRUD/Native Query로 Database와 통신하고, Model은 JPA로 Database 테이블에 매핑된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day04-overview-layered-architecture.gif)
 
 *출처: [Understanding Spring Boot Architecture Flow](https://medium.com/@dulanjayasandaruwan1998/understanding-spring-boot-architecture-flow-615d209b95f9) — Dulanjaya Sandaruwan (Medium). 저작권은 원저작자에게 있습니다.*
 

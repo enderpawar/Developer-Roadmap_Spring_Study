@@ -103,7 +103,7 @@ public class HelloController {
 
 ## 공통 금지와 규칙
 
-- 이미지는 `https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/<file>` 형식을 유지하고, 이미지 아래 주석을 달지 않는다. 기존 이미지는 지우지 않고 옮기기만 한다.
+- 이미지는 `https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/<file>` 형식을 유지하고, 이미지 아래 주석을 달지 않는다. 기존 이미지는 지우지 않고 옮기기만 한다.
 - 실행하지 않은 결과나 수치를 만들지 않는다.
 - 본문의 "3절 2)" 같은 교차 참조는 새 번호에 맞춘다.
 - 금지: 담당 `velog_post.md` 외 파일 수정, 커밋, 외부 요청, `app/src` 수정.

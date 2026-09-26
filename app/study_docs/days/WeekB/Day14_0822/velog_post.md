@@ -20,7 +20,7 @@ Week B D7은 버퍼다. 새 개념을 배우기보다 한 주 동안 쌓인 설�
 | ③ 기술부채 상환 | Day08 빈 문자열 부채, Day04 메모리 저장소 부채 | `V2` `CHECK` 제약 추가, 메모리 저장소는 Day10에 해소됐음을 재확인 |
 | ④ 주간 독립과제 | `cancel_reason` 컬럼 추가 | 골격 없이 요구사항만 받아 구현 |
 
-독립과제는 처음 커밋([9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)) 시점에는 다음 세션으로 넘길 예정이었지만, 같은 날 이어서 끝내고 [2f870cf](https://github.com/enderpawar/8week_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)에 커밋했다.
+독립과제는 처음 커밋([9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)) 시점에는 다음 세션으로 넘길 예정이었지만, 같은 날 이어서 끝내고 [2f870cf](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)에 커밋했다.
 
 메모리 저장소 부채는 새로 고친 것이 아니다. Day10에서 `JpaReservationRepository`가 유일한 `@Repository` Bean이 됐고, `InMemoryReservationRepository`의 `@Repository`는 주석 처리된 상태였다. 이날은 그 사실을 확인하고 원장에 반영만 했다.
 
@@ -128,7 +128,7 @@ V3__cancel_reason               (Day14, 독립과제)
 
 Flyway 공식 문서는 버전 1인 DB에 V2 파일을 더해 버전 2가 되는 migrate 과정을 다음처럼 그린다.
 
-![왼쪽의 Database는 flyway_schema_history 테이블과 기존 테이블들을 가진 Version = 1 상태다. 가운데 V2__Changes.sql 파일이 더해지면, 오른쪽 Database는 같은 flyway_schema_history와 기존 테이블에 새 테이블이 추가된 Version = 2 상태가 된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day14-web-flyway-migrate.png)
+![왼쪽의 Database는 flyway_schema_history 테이블과 기존 테이블들을 가진 Version = 1 상태다. 가운데 V2__Changes.sql 파일이 더해지면, 오른쪽 Database는 같은 flyway_schema_history와 기존 테이블에 새 테이블이 추가된 Version = 2 상태가 된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day14-web-flyway-migrate.png)
 
 *출처: [Migrations — Redgate Flyway Documentation](https://documentation.red-gate.com/flyway/flyway-concepts/migrations) — Copyright 1999 - 2026 Red Gate Software Ltd. All rights reserved.*
 
@@ -170,7 +170,7 @@ Reservation.cancel(String)으로 선언 변경
 → 컴파일 통과 후 HTTP 계약 변경으로 MockMvc 테스트 2개 실패
 ```
 
-![클래스 다이어그램. 오른쪽 열에 위에서 아래로 «@RestController» ReservationController, «@Service» ReservationService, «@Entity» Reservation, «table» reservation이 놓여 있다. Controller의 cancel(id: Long, cancelReason: String)은 cancelReason에 @RequestParam @NotBlank 제약이 붙어 있고, Controller가 Service의 cancel(id, cancelReason)을, Service가 Reservation의 cancel(cancelReason: String)을 «call» 의존 화살표로 호출한다. Reservation은 confirmed와 cancelReason 필드, getCancelReason()을 가지며 «map»으로 reservation 테이블에 연결된다. 테이블에는 room_name과 requester_name의 <> '' 제약과 cancel_reason VARCHAR(100) [0..1]이 있다. 왼쪽 열의 ReservationControllerHttpTest, ReservationServiceTest, JpaReservationRepositoryTest가 각각 같은 높이의 Controller, Service, Reservation을 «call»한다. 노트는 ddl-auto: validate가 기동 시 필드와 컬럼을 대조한다는 것을 테이블에 연결한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day14-cancel-reason-layers.png)
+![클래스 다이어그램. 오른쪽 열에 위에서 아래로 «@RestController» ReservationController, «@Service» ReservationService, «@Entity» Reservation, «table» reservation이 놓여 있다. Controller의 cancel(id: Long, cancelReason: String)은 cancelReason에 @RequestParam @NotBlank 제약이 붙어 있고, Controller가 Service의 cancel(id, cancelReason)을, Service가 Reservation의 cancel(cancelReason: String)을 «call» 의존 화살표로 호출한다. Reservation은 confirmed와 cancelReason 필드, getCancelReason()을 가지며 «map»으로 reservation 테이블에 연결된다. 테이블에는 room_name과 requester_name의 <> '' 제약과 cancel_reason VARCHAR(100) [0..1]이 있다. 왼쪽 열의 ReservationControllerHttpTest, ReservationServiceTest, JpaReservationRepositoryTest가 각각 같은 높이의 Controller, Service, Reservation을 «call»한다. 노트는 ddl-auto: validate가 기동 시 필드와 컬럼을 대조한다는 것을 테이블에 연결한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day14-cancel-reason-layers.png)
 
 그림에서 의존 화살표는 위에서 아래로 향하고, 컴파일 에러는 그 반대 방향으로 올라왔다. 가장 아래의 `Reservation`을 바꾸자 그것을 호출하는 모든 클래스가 차례로 드러났다. 인터페이스나 DI가 없어도, 정적 타입 검사만으로 영향 범위가 목록이 된다.
 
@@ -351,7 +351,7 @@ assertEquals(reloaded.getCancelReason(), saved.getCancelReason());
 | `CHECK` 제약이 `''` 거부 | `checkConstraintRejectsEmptyRoomName()` — 네이티브 쿼리로 앱 검증 우회 | `PersistenceException` |
 | `cancel_reason`의 변경 감지 반영 | `checkCancelReason()` — `save()` 없이 flush 후 `clear()`와 재조회 | 서로 다른 사유 값으로 통과 |
 
-최종 `./gradlew test` 전체 16개가 통과했다. 코드는 [9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)(`validate`, `V2`)과 [2f870cf](https://github.com/enderpawar/8week_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)(`V3`, 독립과제)에 있다.
+최종 `./gradlew test` 전체 16개가 통과했다. 코드는 [9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)(`validate`, `V2`)과 [2f870cf](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)(`V3`, 독립과제)에 있다.
 
 **미검증 범위**를 구분해둔다.
 
@@ -365,7 +365,7 @@ assertEquals(reloaded.getCancelReason(), saved.getCancelReason());
 
 이번 주 다룬 검증들이 요청 처리 흐름의 어느 계층에 걸리는지 한 장으로 정리하면 다음과 같다. 이 프로젝트의 `@NotBlank`는 Presentation Layer, `NOT NULL`·`CHECK`는 Database 위치의 검증이다.
 
-![Client에서 시작해 Java 애플리케이션 안의 Presentation Layer, Business Layer, Data Access Layer를 차례로 지나 Database/Disk에 도달하는 흐름. 다섯 위치 각각에 아래쪽에서 Custom Validation 화살표가 올라와, 검증이 클라이언트부터 데이터베이스까지 모든 계층에서 일어날 수 있음을 보여준다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day14-overview-validation-layers.png)
+![Client에서 시작해 Java 애플리케이션 안의 Presentation Layer, Business Layer, Data Access Layer를 차례로 지나 Database/Disk에 도달하는 흐름. 다섯 위치 각각에 아래쪽에서 Custom Validation 화살표가 올라와, 검증이 클라이언트부터 데이터베이스까지 모든 계층에서 일어날 수 있음을 보여준다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day14-overview-validation-layers.png)
 
 *출처: [Hibernate Validator 8.0 Reference Guide — Preface](https://docs.hibernate.org/validator/8.0/reference/en-US/html_single/) — Hibernate Validator 공식 문서. 저작권은 원저작자에게 있습니다.*
 

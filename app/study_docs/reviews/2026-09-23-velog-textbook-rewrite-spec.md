@@ -53,7 +53,7 @@ Week B D4~D7(Day11~Day14)은 현재 `velog/week-b-persistence-context-and-dirty-
 - 근거는 그날 폴더의 `vocab.md`, `quiz.md`, `explain-log.md`, `progress.md`, 기존 `velog_post.md`, 그리고 **그날 커밋의 소스**다. 소스는 `git log`로 해당 날짜 커밋을 찾아 `git show <sha>:<path>`로 읽는다.
   - Week B D4~D7은 기존 통합 글과 Day11~Day14 폴더 자료, 커밋 `9e3dfc3`·`2f870cf`가 근거다.
 - **글 속 코드는 그날 시점의 코드다.** 이후 바뀐 현재 `src/`를 그날 코드처럼 쓰지 않는다. 필요하면 “이후 DayN에서 ~로 바뀜”이라고 한 줄 덧붙인다.
-- 기존 글에 있는 실제 오답 원문, 컴파일러·런타임 메시지 원문, 테스트 결과 수치, 커밋 permalink는 그대로 보존한다. 새 permalink는 `git`으로 SHA를 확인한 경우에만 쓴다(저장소: `https://github.com/enderpawar/8week_Spring_Study`).
+- 기존 글에 있는 실제 오답 원문, 컴파일러·런타임 메시지 원문, 테스트 결과 수치, 커밋 permalink는 그대로 보존한다. 새 permalink는 `git`으로 SHA를 확인한 경우에만 쓴다(저장소: `https://github.com/enderpawar/Developer-Roadmap_Spring_Study`).
 - 없던 질문, 없던 실험, 측정하지 않은 수치를 만들지 않는다. 설명은 늘려도 **사실은 늘리지 않는다.**
 - 기존 글의 좋은 서술은 버리지 말고 확장의 뼈대로 쓴다.
 

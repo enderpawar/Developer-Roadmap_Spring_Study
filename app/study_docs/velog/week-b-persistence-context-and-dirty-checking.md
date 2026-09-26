@@ -48,7 +48,7 @@ insert into reservation (confirmed, requester_name, room_name, id) values (?, ?,
 select r1_0.id, r1_0.confirmed, r1_0.requester_name, r1_0.room_name from reservation r1_0 where r1_0.id=?
 ```
 
-![시퀀스 다이어그램. 테스트가 save(reservation)를 호출하면 Repository가 영속성 컨텍스트에 영속 상태로 등록하고, flush() 시점에 컨텍스트가 H2로 INSERT를 보낸다. 이후 alt 프레임이 두 갈래로 갈린다. clear()를 호출하지 않은 갈래에서는 findById(id) 두 번이 모두 캐시 조회에서 끝나고 인스턴스 r을 돌려주며, H2 생명선에는 화살표가 하나도 닿지 않는다. clear()를 호출한 갈래에서는 첫 findById(id)만 컨텍스트가 H2로 SELECT를 보내 행 1건을 받아오고, 두 번째 findById(id)는 다시 캐시 조회에서 끝나 같은 인스턴스 r을 돌려준다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day11-first-level-cache.png)
+![시퀀스 다이어그램. 테스트가 save(reservation)를 호출하면 Repository가 영속성 컨텍스트에 영속 상태로 등록하고, flush() 시점에 컨텍스트가 H2로 INSERT를 보낸다. 이후 alt 프레임이 두 갈래로 갈린다. clear()를 호출하지 않은 갈래에서는 findById(id) 두 번이 모두 캐시 조회에서 끝나고 인스턴스 r을 돌려주며, H2 생명선에는 화살표가 하나도 닿지 않는다. clear()를 호출한 갈래에서는 첫 findById(id)만 컨텍스트가 H2로 SELECT를 보내 행 1건을 받아오고, 두 번째 findById(id)는 다시 캐시 조회에서 끝나 같은 인스턴스 r을 돌려준다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day11-first-level-cache.png)
 
 `clear()`는 조회를 막는 장치가 아니라 **"처음 조회하는 상태"로 되돌리는** 장치였다. 그리고 두 경우 모두 두 조회가 같은 객체를 돌려줬다. 1차 캐시가 보장하는 건 값이 같다는 게 아니라 같은 트랜잭션·같은 `id`면 **객체가 하나**라는 것이다.
 
@@ -153,7 +153,7 @@ Service를 고치니 Controller가, Controller를 고치니 테스트 4곳이 �
 | 변경 감지 — `save()` 없이 `UPDATE` | 자동 — flush 후 `clear()` + 재조회 | `UPDATE` 관찰, 값 반영 확인 |
 | `CHECK` 제약이 `''`를 거부 | 자동 — 네이티브 쿼리로 앱 검증 우회 | `PersistenceException` |
 
-전체 `./gradlew test` 16개 통과. 코드는 [9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)과 [2f870cf](https://github.com/enderpawar/8week_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)에 있다.
+전체 `./gradlew test` 16개 통과. 코드는 [9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)과 [2f870cf](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3)에 있다.
 
 **미검증 범위**를 구분해둔다. 오늘 확인한 동일성과 변경 감지는 전부 하나의 `@Transactional` 안에서 관찰했고, 트랜잭션이 다를 때의 동작은 보지 않았다. `ddl-auto: validate`도 컬럼의 존재와 타입을 볼 뿐 `CHECK` 제약까지 검사하지는 않는다.
 
@@ -174,4 +174,4 @@ Week B를 시작할 때 JPA를 "SQL을 대신 써주는 것"으로 알고 있었
 
 ---
 
-오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/8week_Spring_Study/tree/master/app)
+오늘 공부한 소스코드: [8week_Spring_Study/app](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/tree/master/app)

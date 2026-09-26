@@ -191,7 +191,7 @@ Flyway는 SQL 파일을 순서대로 한 번씩만 실행한다. 이 규칙이 �
 
 Flyway 공식 문서는 DB의 `flyway_schema_history`와 로컬 마이그레이션 파일을 함께 대조해 검증을 통과시키는 validate 단계를 다음처럼 그린다.
 
-![왼쪽 Database 상자 안에 초록색 flyway_schema_history 테이블과 파란 테이블 세 개가 있고, 더하기 기호 옆에 V1__Initial.sql, V2__Changes.sql, V3__RefData.sql 마이그레이션 파일 세 개가 놓여 있다. 화살표가 오른쪽 초록 체크 표시로 이어져, 스키마 이력의 기록과 파일을 대조한 validate가 통과했음을 나타낸다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day13-web-flyway-validate.png)
+![왼쪽 Database 상자 안에 초록색 flyway_schema_history 테이블과 파란 테이블 세 개가 있고, 더하기 기호 옆에 V1__Initial.sql, V2__Changes.sql, V3__RefData.sql 마이그레이션 파일 세 개가 놓여 있다. 화살표가 오른쪽 초록 체크 표시로 이어져, 스키마 이력의 기록과 파일을 대조한 validate가 통과했음을 나타낸다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day13-web-flyway-validate.png)
 
 *출처: [Flyway schema history table — Redgate Flyway Documentation](https://documentation.red-gate.com/fd/flyway-schema-history-table-273973417.html) — Copyright 1999 - 2026 Red Gate Software Ltd. All rights reserved.*
 
@@ -219,7 +219,7 @@ FlywayValidateException:
 
 Day12 실험에서 코드에 `repository.save(managed)`가 없는데도 `update reservation set confirmed=?, requester_name=?, room_name=? where id=?`가 로그에 찍혔다.
 
-![시퀀스 다이어그램 두 개가 위아래로 놓여 있다. 위 sd 체크섬 검증에서는 애플리케이션 기동 시 Spring Boot가 Flyway에 마이그레이션을 요청하고, Flyway가 파일마다 체크섬을 계산한 뒤 H2의 flyway_schema_history에서 기록된 체크섬을 받아온다. alt 프레임에서 두 값이 같으면 미적용 버전만 실행하고 기동을 계속하며, 다르면 FlywayValidateException으로 기동을 거부한다. 아래 sd 변경 감지에서는 테스트가 findById(id)를 호출하면 영속성 컨텍스트가 로드 스냅샷을 보관하고 managed를 돌려준다. 테스트가 managed에 cancel을 호출해 필드만 바꾸고 save()는 호출하지 않는다. flush() 시점에 영속성 컨텍스트가 스냅샷과 현재 필드를 비교하고, alt 프레임에서 값이 다르면 H2에 UPDATE를 보내고 같으면 UPDATE를 보내지 않는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day13-checksum-vs-dirty-checking.png)
+![시퀀스 다이어그램 두 개가 위아래로 놓여 있다. 위 sd 체크섬 검증에서는 애플리케이션 기동 시 Spring Boot가 Flyway에 마이그레이션을 요청하고, Flyway가 파일마다 체크섬을 계산한 뒤 H2의 flyway_schema_history에서 기록된 체크섬을 받아온다. alt 프레임에서 두 값이 같으면 미적용 버전만 실행하고 기동을 계속하며, 다르면 FlywayValidateException으로 기동을 거부한다. 아래 sd 변경 감지에서는 테스트가 findById(id)를 호출하면 영속성 컨텍스트가 로드 스냅샷을 보관하고 managed를 돌려준다. 테스트가 managed에 cancel을 호출해 필드만 바꾸고 save()는 호출하지 않는다. flush() 시점에 영속성 컨텍스트가 스냅샷과 현재 필드를 비교하고, alt 프레임에서 값이 다르면 H2에 UPDATE를 보내고 같으면 UPDATE를 보내지 않는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day13-checksum-vs-dirty-checking.png)
 
 #### 두 장치의 비교
 
@@ -261,7 +261,7 @@ CS 쪽으로 보면 두 장치 모두 "기준값을 저장해두고 현재 값�
 
 ### 3) 자동 검증 범위
 
-이날은 시험만 진행해 새 코드나 테스트가 없다. 시험 기록은 `quiz.md`로 남겼고 D4~D7 작업과 함께 [9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 커밋했다. 위에서 인용한 체크섬 오류 메시지는 Day08, `UPDATE` 로그는 Day12의 실행 결과다.
+이날은 시험만 진행해 새 코드나 테스트가 없다. 시험 기록은 `quiz.md`로 남겼고 D4~D7 작업과 함께 [9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 커밋했다. 위에서 인용한 체크섬 오류 메시지는 Day08, `UPDATE` 로그는 Day12의 실행 결과다.
 
 ## 4. 학습 정리와 다음 범위
 
@@ -269,7 +269,7 @@ CS 쪽으로 보면 두 장치 모두 "기준값을 저장해두고 현재 값�
 
 오늘 다룬 시험 범위인 Week B 저장 계층이 전체 구조의 어디에 있는지 한 장으로 다시 보면 다음과 같다. Controller는 이 그림 왼쪽의 Service 앞에서 요청을 받고, 그림의 Database 스키마는 애플리케이션 기동 시 Flyway가 먼저 마이그레이션해 둔다.
 
-![왼쪽부터 다섯 구역이 점선으로 나뉘어 있다. Application Modules 구역의 Service가 Repository를 호출하고, Repository는 O/R Mapper 구역의 Spring Data JPA를 거쳐 JPA 인터페이스를 구현한 Hibernate로 이어진다. 빨간 점선 테두리는 Repository부터 Hibernate까지를 한 묶음으로 표시한다. Hibernate는 JDBC Interfaces 구역의 JDBC Basic APIs와 접속 설정을 가진 DataSource를 사용하고, 둘은 JDBC Implementations 구역의 JDBC Driver로 모인 뒤 Persistence Layer 구역의 Database에 도달한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day13-overview-data-access-stack.png)
+![왼쪽부터 다섯 구역이 점선으로 나뉘어 있다. Application Modules 구역의 Service가 Repository를 호출하고, Repository는 O/R Mapper 구역의 Spring Data JPA를 거쳐 JPA 인터페이스를 구현한 Hibernate로 이어진다. 빨간 점선 테두리는 Repository부터 Hibernate까지를 한 묶음으로 표시한다. Hibernate는 JDBC Interfaces 구역의 JDBC Basic APIs와 접속 설정을 가진 DataSource를 사용하고, 둘은 JDBC Implementations 구역의 JDBC Driver로 모인 뒤 Persistence Layer 구역의 Database에 도달한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day13-overview-data-access-stack.png)
 
 *출처: [6.3. Database Access (JPA) — TERASOLUNA Server Framework for Java (5.x) Development Guideline](https://terasolunaorg.github.io/guideline/5.4.1.RELEASE/en/ArchitectureInDetail/DataAccessDetail/DataAccessJpa.html) — NTT DATA Corporation, TERASOLUNA 개발 가이드라인. 저작권은 원저작자에게 있습니다.*
 

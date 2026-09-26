@@ -54,7 +54,7 @@
 - 대표 코드블록 바로 뒤에 `**한 줄씩 보기**` 불릿을 단다. 핵심 줄마다 "무엇을 하고 언제 동작하는가"를 한 줄로 쓴다.
 - 마지막 소절 `자동 검증 결과`의 형식:
   - 자동 테스트, 수동 확인, 미검증을 구분한다.
-  - 커밋 링크는 `https://github.com/enderpawar/8week_Spring_Study/commit/293d260`이다.
+  - 커밋 링크는 `https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/293d260`이다.
   - 기존 결과는 그대로 보존한다.
 
 ## 3절 스스로 답한 질문
@@ -70,7 +70,7 @@
 
 ## 공통 규칙
 
-- 이미지는 `https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/<file>` 형식을 유지하고, 이미지 아래에 주석을 달지 않는다. 기존 이미지는 지우지 않고 옮기기만 한다.
+- 이미지는 `https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/<file>` 형식을 유지하고, 이미지 아래에 주석을 달지 않는다. 기존 이미지는 지우지 않고 옮기기만 한다.
 - 코드 발췌는 `git show 293d260:<path>`로 읽은 것만 쓴다.
 - 실행하지 않은 결과나 수치를 만들지 않는다.
 - 커버리지: `vocab`·`quiz`·`explain-log`의 항목이 1절에 빠짐없이 들어갔는지 확인한다.

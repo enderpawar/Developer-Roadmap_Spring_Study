@@ -137,7 +137,7 @@ new Reservation("301호", "김민준")
 
 외부 코드는 `reservation.confirmed = true`처럼 필드를 직접 바꿀 수 없다. 상태 변경은 반드시 `confirm()`·`canceled()`를 거친다. 나중에 "이미 취소된 예약은 확정할 수 없다" 같은 규칙이 생기면 그 메서드 안에만 추가하면 된다.
 
-![클래스 다이어그램. ReservationController가 ReservationRequest를 «use»하고 Reservation을 «create»한다. «record» ReservationRequest는 roomName·requesterName이 둘 다 public에 {readOnly}이고 접근자가 roomName()·requesterName()이라 getRoomName()은 생성되지 않는다. Reservation은 roomName·requesterName이 private {readOnly}이고 confirmed만 가변인데 그마저 private이라, 외부는 confirm()·canceled()로만 상태를 바꿀 수 있다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day02-dto-domain.png)
+![클래스 다이어그램. ReservationController가 ReservationRequest를 «use»하고 Reservation을 «create»한다. «record» ReservationRequest는 roomName·requesterName이 둘 다 public에 {readOnly}이고 접근자가 roomName()·requesterName()이라 getRoomName()은 생성되지 않는다. Reservation은 roomName·requesterName이 private {readOnly}이고 confirmed만 가변인데 그마저 private이라, 외부는 confirm()·canceled()로만 상태를 바꿀 수 있다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day02-dto-domain.png)
 
 그림의 `ReservationController`에는 `reserve()`만 있지만, 같은 커밋의 `cancel()`도 같은 방식으로 `ReservationRequest`를 받고 `Reservation`을 만든다. 한 메서드 안에서 DTO는 `request.roomName()`, Domain은 `reservation.getRoomName()`으로 꺼낸다. 두 명명 규칙이 공존하는 것은 두 타입의 성격 차이가 이름에 드러난 결과다.
 
@@ -290,7 +290,7 @@ public String reserve(@RequestBody ReservationRequest request) {
 - **수동 확인**: 위 표의 두 호출.
 - **미검증**: Domain 객체를 요청 본문으로 직접 받는 대조군, 한글 전송 실패의 두 추정 원인 분리.
 
-오늘 코드는 [`975be06` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/975be06)에 있다.
+오늘 코드는 [`975be06` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/975be06)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -322,7 +322,7 @@ public String reserve(@RequestBody ReservationRequest request) {
 
 JSON 요청 본문이 객체가 되고 다시 응답이 되기까지를 한 장으로 모으면 다음과 같다. 그림의 Resource가 오늘의 record DTO(`ReservationRequest`)에 해당하고, (3) Validator 검증과 (5)·(6) Service·Repository 단계는 오늘 범위 밖이다.
 
-![Spring MVC의 RESTful Web Service 처리 흐름. (1) 클라이언트가 HTTP 요청을 DispatcherServlet으로 보내면 (2) HttpMessageConverter가 JSON 본문을 Resource(Java Bean) 객체로 변환하고 (3) Validator가 입력값을 검증한 뒤 (4) Application Layer의 REST API Controller를 호출한다. (5) Controller는 Domain Layer의 Service를, (6) Service는 Repository를 호출한다. (7) Controller가 반환한 Resource를 HttpMessageConverter가 다시 JSON으로 바꾸고 (8) 응답으로 클라이언트에 보낸다. 개발자가 구현하는 범위는 Resource·Controller·Service·Repository다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day02-overview-json-request-flow.png)
+![Spring MVC의 RESTful Web Service 처리 흐름. (1) 클라이언트가 HTTP 요청을 DispatcherServlet으로 보내면 (2) HttpMessageConverter가 JSON 본문을 Resource(Java Bean) 객체로 변환하고 (3) Validator가 입력값을 검증한 뒤 (4) Application Layer의 REST API Controller를 호출한다. (5) Controller는 Domain Layer의 Service를, (6) Service는 Repository를 호출한다. (7) Controller가 반환한 Resource를 HttpMessageConverter가 다시 JSON으로 바꾸고 (8) 응답으로 클라이언트에 보낸다. 개발자가 구현하는 범위는 Resource·Controller·Service·Repository다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day02-overview-json-request-flow.png)
 
 *출처: [5.1. RESTful Web Service — TERASOLUNA Server Framework for Java (5.x) Development Guideline 5.4.1.RELEASE](https://terasolunaorg.github.io/guideline/5.4.1.RELEASE/en/ArchitectureInDetail/WebServiceDetail/REST.html) — NTT DATA Corporation. 저작권은 원저작자에게 있습니다. © 2013-2018 NTT DATA Corporation, NTT Corporation. Reference document: TERASOLUNA Server Framework for Java (5.x) Development Guideline ([Terms of Use](https://terasolunaorg.github.io/guideline/5.4.1.RELEASE/en/Introduction/TermsOfUse.html)).*
 
@@ -340,4 +340,4 @@ JSON 요청 본문이 객체가 되고 다시 응답이 되기까지를 한 장�
 
 ---
 
-오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/controller/ReservationController.java`, `domain/Reservation.java`, `dto/ReservationRequest.java` ([`975be06`](https://github.com/enderpawar/8week_Spring_Study/commit/975be06))
+오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/controller/ReservationController.java`, `domain/Reservation.java`, `dto/ReservationRequest.java` ([`975be06`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/975be06))

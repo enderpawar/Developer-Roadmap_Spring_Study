@@ -148,7 +148,7 @@ Service 단위 테스트는 저장 규칙과 도메인 예외를 빠르게 확�
 
 수정 전 코드에 실패 테스트를 먼저 실행한 기록은 없다. 따라서 이번 작업을 TDD의 red-green 순서로 진행했다고 쓰지는 않는다. 확인한 범위와 확인하지 않은 순서를 구분해 남긴다.
 
-구현과 검증 근거는 [commit `6c88dcb`](https://github.com/enderpawar/8week_Spring_Study/commit/6c88dcb)에 있다.
+구현과 검증 근거는 [commit `6c88dcb`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/6c88dcb)에 있다.
 
 ## 5. 1주차를 마치며
 

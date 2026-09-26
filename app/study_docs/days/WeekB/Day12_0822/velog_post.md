@@ -73,7 +73,7 @@ update reservation set confirmed=?, requester_name=?, room_name=? where id=?
 
 3차에서 `confirm()`을 최초 저장 이전으로 옮겨 DB에 `true`를 넣어두고, 트랜잭션 안에서는 `cancel()`만 한 번 불렀다. 그제서야 스냅샷(`true`)과 최종값(`false`)이 달라졌고 `UPDATE`가 관찰됐다.
 
-![시퀀스 다이어그램. 참여자는 테스트, Repository, r : Reservation, 영속성 컨텍스트, H2다. 테스트가 save(r)을 호출하면 Repository가 r을 영속 상태로 등록하고, flush() 때 컨텍스트가 H2로 INSERT를 보낸다. findById(id)는 캐시 조회에서 같은 인스턴스 r을 managed로 돌려준다. alt 프레임의 첫 갈래는 저장 전 confirm()으로 스냅샷이 confirmed=true인 3차 시도다. managed.cancel()로 confirmed가 false가 되고, flush()에서 컨텍스트가 true와 false가 다름을 확인해 H2로 UPDATE를 보낸다. 둘째 갈래는 스냅샷이 confirmed=false인 1·2차 시도다. cancel() 뒤 flush()에서 false와 false가 같아 UPDATE가 없다. 프레임 뒤에는 clear() 후 findById(id)가 캐시에 없어 H2로 SELECT를 보내 confirmed=false인 새 인스턴스 reloaded를 받는다. 하단 주석은 두 갈래 모두 assertFalse가 통과하고 차이는 UPDATE 발생 여부뿐이라고 적는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day12-dirty-checking.png)
+![시퀀스 다이어그램. 참여자는 테스트, Repository, r : Reservation, 영속성 컨텍스트, H2다. 테스트가 save(r)을 호출하면 Repository가 r을 영속 상태로 등록하고, flush() 때 컨텍스트가 H2로 INSERT를 보낸다. findById(id)는 캐시 조회에서 같은 인스턴스 r을 managed로 돌려준다. alt 프레임의 첫 갈래는 저장 전 confirm()으로 스냅샷이 confirmed=true인 3차 시도다. managed.cancel()로 confirmed가 false가 되고, flush()에서 컨텍스트가 true와 false가 다름을 확인해 H2로 UPDATE를 보낸다. 둘째 갈래는 스냅샷이 confirmed=false인 1·2차 시도다. cancel() 뒤 flush()에서 false와 false가 같아 UPDATE가 없다. 프레임 뒤에는 clear() 후 findById(id)가 캐시에 없어 H2로 SELECT를 보내 confirmed=false인 새 인스턴스 reloaded를 받는다. 하단 주석은 두 갈래 모두 assertFalse가 통과하고 차이는 UPDATE 발생 여부뿐이라고 적는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day12-dirty-checking.png)
 
 ### 4) flush 시점과 테스트 트랜잭션
 
@@ -167,7 +167,7 @@ assertFalse(reloaded.isConfirmed());
 
 마지막의 `clear()` → `findById()`는 검증 지점을 DB로 옮기는 장치다. `clear()` 없이 `managed.isConfirmed()`를 확인하면 메모리 값만 보는 것이라, DB 반영 여부를 증명하지 못한다.
 
-`cancel()`은 이날 인자가 없는 메서드였다. 이후 D7 독립과제([2f870cf](https://github.com/enderpawar/8week_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3))에서 취소 사유를 받는 `cancel(String)`으로 바뀌었다.
+`cancel()`은 이날 인자가 없는 메서드였다. 이후 D7 독립과제([2f870cf](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/2f870cf97f51e956885b914505c09d54fe1b7ca3))에서 취소 사유를 받는 `cancel(String)`으로 바뀌었다.
 
 **한 줄씩 보기**
 
@@ -195,7 +195,7 @@ select r1_0.id, r1_0.confirmed, r1_0.requester_name, r1_0.room_name from reserva
 | DB 반영 | `clear()` 후 재조회 | `assertFalse(reloaded.isConfirmed())` 통과 |
 | commit 여부 | 확인하지 않음 | 테스트 트랜잭션은 기본 rollback |
 
-`select`가 한 줄뿐이라는 점도 Day11과 맞는다. `managed`를 얻은 첫 `findById()`는 캐시 적중이었고, SELECT는 `clear()` 뒤 재조회에서만 나갔다. 코드는 [9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 있다.
+`select`가 한 줄뿐이라는 점도 Day11과 맞는다. `managed`를 얻은 첫 `findById()`는 캐시 적중이었고, SELECT는 `clear()` 뒤 재조회에서만 나갔다. 코드는 [9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -225,7 +225,7 @@ select r1_0.id, r1_0.confirmed, r1_0.requester_name, r1_0.room_name from reserva
 
 오늘 실험은 관리 중인 Entity의 필드를 바꾸고 `save()` 없이 flush했을 때 `UPDATE`가 나가는지 확인하는 것이었다. 아래 그림은 그 변경 감지가 flush 한 번 안에서 어떤 순서로 일어나는지 정리한 것이다.
 
-![영속성 컨텍스트(entityManager) 안의 변경 감지 흐름도. 1차 캐시 표는 @Id, Entity, 스냅샷 세 열로 memberA와 memberB의 엔티티와 스냅샷을 함께 보관한다. 1. flush()가 호출되면 2. 엔티티와 스냅샷을 비교하고, 달라진 memberA에 대해 3. UPDATE SQL을 생성해 쓰기 지연 SQL 저장소에 쌓는다. 4. flush 때 저장소의 UPDATE A가 DB로 전송되고, 5. commit으로 DB에 확정된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day12-overview-dirty-checking.png)
+![영속성 컨텍스트(entityManager) 안의 변경 감지 흐름도. 1차 캐시 표는 @Id, Entity, 스냅샷 세 열로 memberA와 memberB의 엔티티와 스냅샷을 함께 보관한다. 1. flush()가 호출되면 2. 엔티티와 스냅샷을 비교하고, 달라진 memberA에 대해 3. UPDATE SQL을 생성해 쓰기 지연 SQL 저장소에 쌓는다. 4. flush 때 저장소의 UPDATE A가 DB로 전송되고, 5. commit으로 DB에 확정된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day12-overview-dirty-checking.png)
 
 *출처: [[JPA] 영속성 컨텍스트](https://velog.io/@imcool2551/JPA-%EC%98%81%EC%86%8D%EC%84%B1-%EC%BB%A8%ED%85%8D%EC%8A%A4%ED%8A%B8) — imcool2551 (velog), 원 도식은 인프런 김영한 JPA 로드맵 강의 자료. 저작권은 원저작자에게 있습니다.*
 

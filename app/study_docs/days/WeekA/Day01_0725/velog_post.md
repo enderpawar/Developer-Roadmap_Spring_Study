@@ -65,11 +65,11 @@ public class HelloController {
 
 `/nope`처럼 매핑 표에 없는 경로는 컨트롤러까지 가지 않는다. 처리할 핸들러가 없다는 사실 자체가 "요청 쪽 경로가 잘못됐다"는 신호가 되어 404가 된다.
 
-![시퀀스 다이어그램. 클라이언트가 GET /hello를 DispatcherServlet에 보내면 DispatcherServlet이 HandlerMapping에 핸들러를 조회한다. alt 프레임의 첫 분기(매칭되는 핸들러 있음)에서는 hello()가 호출되고 반환된 문자열이 200 OK와 함께 클라이언트로 돌아간다. 아무도 상태를 지정하지 않아 기본값이 붙는다. 두 번째 분기(없음)에서는 HandlerMapping이 핸들러 없음을 알리고 404가 반환되는데, HelloController 생명선까지는 가지도 못한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day01-request-flow.png)
+![시퀀스 다이어그램. 클라이언트가 GET /hello를 DispatcherServlet에 보내면 DispatcherServlet이 HandlerMapping에 핸들러를 조회한다. alt 프레임의 첫 분기(매칭되는 핸들러 있음)에서는 hello()가 호출되고 반환된 문자열이 200 OK와 함께 클라이언트로 돌아간다. 아무도 상태를 지정하지 않아 기본값이 붙는다. 두 번째 분기(없음)에서는 HandlerMapping이 핸들러 없음을 알리고 404가 반환되는데, HelloController 생명선까지는 가지도 못한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day01-request-flow.png)
 
 `DispatcherServlet`보다 앞에는 Spring Boot가 띄운 내장 Tomcat이 있다. Tomcat 공식 문서는 Tomcat이 HTTP 요청 줄과 헤더를 해석한 뒤 `CoyoteAdapter.service()`를 거쳐 서블릿 처리로 넘기는 앞단을 다음처럼 그린다.
 
-![시퀀스 다이어그램. Tomcat의 Processor가 InputBuffer에 parseRequestLine()과 parseHeaders()를 호출해 HTTP 요청 줄과 헤더를 해석하고, prepareRequestProtocol()과 prepareRequest()로 요청 객체를 준비한 뒤 CoyoteAdapter.service()를 호출한다. 노트는 이 지점에서 서블릿 요청 처리가 일어난다고 표시한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day01-web-tomcat-http11-request.png)
+![시퀀스 다이어그램. Tomcat의 Processor가 InputBuffer에 parseRequestLine()과 parseHeaders()를 호출해 HTTP 요청 줄과 헤더를 해석하고, prepareRequestProtocol()과 prepareRequest()로 요청 객체를 준비한 뒤 CoyoteAdapter.service()를 호출한다. 노트는 이 지점에서 서블릿 요청 처리가 일어난다고 표시한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day01-web-tomcat-http11-request.png)
 
 *출처: [Apache Tomcat 10.1 — Request Process Flow](https://tomcat.apache.org/tomcat-10.1-doc/architecture/requestProcess.html) — © The Apache Software Foundation, Apache License 2.0*
 
@@ -259,7 +259,7 @@ public class HelloController{
 | `GET /bye` | 컴파일 에러 수정 후 `201 Created` | `curl.exe -i` 수동 |
 | `GET /nope` | `404 Not Found` | `curl.exe -i` 수동 |
 
-자동 테스트는 `contextLoads()` 하나라서 네 경로의 상태코드나 본문이 바뀌어도 빌드는 통과한다. 오늘 코드는 [`76a0fe5` 커밋](https://github.com/enderpawar/8week_Spring_Study/commit/76a0fe5)에 있다.
+자동 테스트는 `contextLoads()` 하나라서 네 경로의 상태코드나 본문이 바뀌어도 빌드는 통과한다. 오늘 코드는 [`76a0fe5` 커밋](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/76a0fe5)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -293,7 +293,7 @@ public class HelloController{
 
 오늘 따라간 경로를 처음부터 끝까지 한 장으로 모으면 다음과 같다. ①②는 Tomcat, ③~⑦은 Spring MVC가 처리하고, 매핑이 없으면 ④에서 바로 404로 빠진다.
 
-![전체 흐름도. Client가 curl.exe로 GET /hello를 보내면 내장 Tomcat의 ① Connector(Coyote)가 HTTP 요청 줄과 헤더를 파싱하고 ② Filter Chain을 지난다. 이어 Spring MVC 영역에서 ③ DispatcherServlet이 요청을 받아 ④ HandlerMapping에서 /hello → hello() 매핑을 찾고, ⑤ HandlerAdapter가 ⑥ HelloController.hello()를 호출한다. ⑦ HttpMessageConverter가 반환된 String을 본문으로 바꿔 200 OK와 "Hello,StudyRoom!"을 Client에 돌려준다. 매핑이 없는 /nope는 ④에서 빨간 점선으로 빠져 Controller에 닿지 않고 404 Not Found가 돌아간다. 하단 주석은 상태코드가 기본값 200이거나 ResponseEntity로 직접 지정된다(/bye → 201)고 적는다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day01-overview-request-flow.png)
+![전체 흐름도. Client가 curl.exe로 GET /hello를 보내면 내장 Tomcat의 ① Connector(Coyote)가 HTTP 요청 줄과 헤더를 파싱하고 ② Filter Chain을 지난다. 이어 Spring MVC 영역에서 ③ DispatcherServlet이 요청을 받아 ④ HandlerMapping에서 /hello → hello() 매핑을 찾고, ⑤ HandlerAdapter가 ⑥ HelloController.hello()를 호출한다. ⑦ HttpMessageConverter가 반환된 String을 본문으로 바꿔 200 OK와 "Hello,StudyRoom!"을 Client에 돌려준다. 매핑이 없는 /nope는 ④에서 빨간 점선으로 빠져 Controller에 닿지 않고 404 Not Found가 돌아간다. 하단 주석은 상태코드가 기본값 200이거나 ResponseEntity로 직접 지정된다(/bye → 201)고 적는다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day01-overview-request-flow.png)
 
 ### 2) 이해의 변화와 남은 것
 
@@ -309,4 +309,4 @@ public class HelloController{
 
 ---
 
-오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/HelloController.java` ([`76a0fe5`](https://github.com/enderpawar/8week_Spring_Study/commit/76a0fe5))
+오늘 공부한 소스코드: `app/src/main/java/com/example/studyroom/HelloController.java` ([`76a0fe5`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/76a0fe5))

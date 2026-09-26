@@ -29,7 +29,7 @@
      - Day03·05: overview 그림이 없으므로 **직접 그린다** (6절 참조).
    - `### 2) 이해의 변화와 남은 것` — 기존 학습 정리 내용을 여기로 모은다.
 6. **번호·제목:** H2 `N.`, H3 `N)`. 모든 제목은 명사형(질문형·서술형 금지), 개념어는 영어 표기(괄호 병기 금지). 본문 속 "3절 2)" 같은 교차 참조를 새 번호에 맞춘다.
-7. **이미지:** 전부 `https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/<file>` 형식. 이미지 아래 주석 금지. 기존 자체 UML·`-web-` 그림은 삭제하지 않고 알맞은 소절에 유지한다.
+7. **이미지:** 전부 `https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/<file>` 형식. 이미지 아래 주석 금지. 기존 자체 UML·`-web-` 그림은 삭제하지 않고 알맞은 소절에 유지한다.
 
 ## 3. 사실 근거 (지어내지 않기)
 

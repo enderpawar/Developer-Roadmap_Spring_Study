@@ -4,17 +4,31 @@ Week B에서는 영속성 컨텍스트와 변경 감지를 관찰하기 위해 `
 
 > 예약 조회와 상태 변경을 Service 메서드 하나의 트랜잭션으로 묶었다. 정상 반환 경로에서는 명시적인 `save()` 없이 `UPDATE`가 commit됐고, 실패 경로에서는 `flush()`로 같은 `UPDATE`를 먼저 실행한 뒤에도 rollback되어 원래 값이 유지됐다. 전체 테스트 18개가 통과했으며, `readOnly=true`는 쓰기 권한 제어가 아니라 조회 의도와 최적화를 위한 힌트라는 한계도 함께 정리했다.
 
+> **오늘의 흐름** `ReservationController → ReservationService.cancel() @Transactional 시작 → findById → 상태 변경(Dirty Checking) → 정상 반환: flush → commit / 예외: rollback`
+>
+> 이전 Day: 스키마 소유권·V3 `cancel_reason` 정리 (Day14)
+> 다음 Day: `@Transactional`을 실행하는 Spring AOP Proxy와 self-invocation (Day16)
+
 ## 1. 개념 설명
 
-| 용어 | 한줄뜻 | 현재 프로젝트 적용 지점 |
-|---|---|---|
-| 트랜잭션 경계 | 여러 DB 작업을 전부 성공하거나 전부 취소할 하나의 단위로 묶은 범위 | `ReservationService.cancel()`의 `@Transactional` |
-| commit | 트랜잭션의 변경을 최종 확정하는 동작 | 서비스 메서드 정상 반환 뒤 DB에 취소 상태 유지 |
-| rollback | commit되지 않은 변경을 취소하는 동작 | `RuntimeException` 뒤 원래 예약 상태 유지 |
-| flush | 영속성 컨텍스트의 변경을 SQL로 DB에 보내는 동작 | `entityManager.flush()`에서 `UPDATE` 출력 |
-| `readOnly=true` | 조회 전용 의도를 전달하는 트랜잭션 힌트 | 조회 Service 메서드에 적용 가능 |
-
 ### 1) Service 계층의 Transaction Boundary
+
+> **Transaction Boundary** = 여러 DB 작업을 전부 성공시키거나 전부 취소시키는 하나의 단위로 묶은 범위
+
+우리 코드에서는 `cancel()` 메서드 전체가 이 범위다. 조회, 상태 변경, DB 반영이라는 서로 다른 단계를 하나의 `@Transactional`로 묶었다.
+
+```java
+@Transactional //트랜잭션 경계 : 조회 -> 상태변경 -> DB에 반영
+// 전부 성공하거나 전부 취소하는 하나의 단위로 묶는 범위
+public Reservation cancel(Long id, String cancelReason) {
+    Reservation reservation = reservationRepository.findById(id)
+            .orElseThrow(() -> new ReservationNotFoundException(id)); // 1. 예약이 있는지 없는지 조회
+
+    reservation.cancel(cancelReason); //2. 취소 상태로 변경
+
+    return reservation;
+}
+```
 
 예약 취소는 SQL 한 줄의 이름이 아니다. 애플리케이션이 보장해야 하는 하나의 업무 흐름이다.
 
@@ -29,16 +43,30 @@ Week B에서는 영속성 컨텍스트와 변경 감지를 관찰하기 위해 `
 
 Spring 공식 문서는 `@Transactional` 메서드 호출에서 트랜잭션이 진입 시 시작되고, 반환 시 commit 또는 rollback되는 경로를 다음처럼 그린다.
 
-![Spring 선언적 트랜잭션 호출 흐름도. Caller가 대상 객체가 아니라 AOP Proxy를 호출하고, 호출은 Transaction Advisor와 Custom Advisor(s)를 거쳐 Target Method에 도달한다. Transaction Advisor에서 들어갈 때 트랜잭션이 생성되고 나올 때 commit 또는 rollback되며, 비즈니스 로직 실행 뒤 제어는 인터셉터 체인을 거꾸로 거쳐 Caller에게 결과를 돌려준다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day15-web-declarative-transaction-proxy.png)
+![Spring 선언적 트랜잭션 호출 흐름도. Caller가 대상 객체가 아니라 AOP Proxy를 호출하고, 호출은 Transaction Advisor와 Custom Advisor(s)를 거쳐 Target Method에 도달한다. Transaction Advisor에서 들어갈 때 트랜잭션이 생성되고 나올 때 commit 또는 rollback되며, 비즈니스 로직 실행 뒤 제어는 인터셉터 체인을 거꾸로 거쳐 Caller에게 결과를 돌려준다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day15-web-declarative-transaction-proxy.png)
 
 *출처: [Understanding the Spring Framework's Declarative Transaction Implementation — Spring Framework Reference](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-decl-explained.html) — Copyright © 2005 - Broadcom. All Rights Reserved. (문서 사본은 무료 배포와 저작권 고지 유지 조건으로 허용)*
 
 이 판단은 ACID의 원자성(Atomicity)과 연결된다. 원자성은 작업을 더 이상 쪼갤 수 없다는 문법 이야기가 아니라, 외부에서 관찰할 때 **전체 성공 또는 전체 실패만 허용한다**는 약속이다. 이번 코드에서 그 단위는 “예약 조회”가 아니라 “예약 취소”다.
 
-`@Transactional` 하나가 ACID 전체를 자동으로 해결한다는 뜻은 아니다. 어떤 격리 수준을 쓸지, DB 제약으로 어떤 일관성을 지킬지, 여러 트랜잭션의 충돌을 어떻게 다룰지는 별도 판단이 필요하다. 오늘 실험으로 확인한 범위는 Service 경계의 원자성과 commit·rollback이다.
+`@Transactional` 하나가 ACID 전체를 자동으로 해결한다는 뜻은 아니다. 어떤 격리 수준을 쓸지, DB 제약으로 어떤 일관성을 지킬지, 여러 트랜잭션의 충돌을 어떻게 다룰지는 별도 판단이 필요하다.
 
+> **보장 범위** — 오늘 실험으로 확인한 범위는 Service 경계의 원자성과 commit·rollback이다. 격리 수준, DB 제약을 통한 일관성, 동시 트랜잭션 충돌 처리는 이번 범위 밖이다.
 
 ### 2) 정상 반환 경로의 commit 과정
+
+> **commit** = 트랜잭션에서 수행한 변경을 최종 확정하는 동작
+
+우리 코드에서는 상태를 바꾼 뒤에도 `save()`를 다시 호출하지 않는다. 조회된 Entity가 이미 영속 상태이기 때문이다.
+
+```java
+Reservation reservation = reservationRepository.findById(id)
+        .orElseThrow(() -> new ReservationNotFoundException(id));
+
+reservation.cancel(cancelReason);
+// reservationRepository.save(reservation); //3. DB에 반영 -> @Transactional 사용시 안써도 됨.
+// 조회된 엔티티가 영속 상태라 변경 감지를 처리한다.
+```
 
 `cancel()`에 진입하면 트랜잭션과 영속성 컨텍스트가 해당 호출 범위에서 유지된다. `findById()`가 반환한 `Reservation`은 단순한 값 복사본이 아니라 Hibernate가 관리하는 영속 Entity다.
 
@@ -57,7 +85,20 @@ Spring 공식 문서는 `@Transactional` 메서드 호출에서 트랜잭션이 
 
 여기서 `@Transactional`이 변경된 객체를 영속성 컨텍스트에 새로 넣는다고 이해하면 순서가 뒤집힌다. Entity가 관리 대상이 되는 직접적인 계기는 트랜잭션 안의 조회이고, 애노테이션은 그 관리 범위가 Service 메서드 전체에 유지되도록 트랜잭션 경계를 만든다.
 
+> **보장 범위** — `cancelCommitsChangedState()` 테스트로 `save()` 없이도 `UPDATE`가 발생하고 재조회 값이 유지됨을 확인했다. Hibernate 내부의 스냅샷 비교 알고리즘 자체는 이번에 검증한 대상이 아니다.
+
 ### 3) flush와 commit의 역할 구분
+
+> **flush** = 영속성 컨텍스트의 변경 내용을 SQL로 DB에 전송하는 동작
+
+우리 코드에서는 `RollbackScenarioService.cancelThenFail()`이 예외 전에 flush를 강제로 호출해 이 구분을 드러낸다.
+
+```java
+reservation.cancel("강제 실패");
+entityManager.flush(); // UPDATE를 DB에 전송하지만 커밋은 x
+
+throw new RuntimeException("취소 처리 중 실패");
+```
 
 `flush()`는 영속성 컨텍스트와 DB 사이의 동기화다. 변경 감지 결과인 `UPDATE`를 DB로 보내지만, 트랜잭션을 끝내거나 변경을 최종 확정하지 않는다.
 
@@ -69,9 +110,34 @@ flush 성공 + rollback     → UPDATE가 실행됐어도 최종 상태는 원�
 flush 전 rollback         → 변경 SQL 자체가 전송되지 않을 수 있음
 ```
 
-SQL 로그에 `UPDATE`가 보였다는 사실만으로 commit됐다고 결론 내릴 수 없는 이유다. 로그는 DB에 SQL이 전달됐음을 보여주지만, 그 트랜잭션이 나중에 확정됐는지 취소됐는지까지 한 줄의 `UPDATE`가 말해주지는 않는다.
+> **보장 범위** — SQL 로그에 `UPDATE`가 보였다는 사실만으로 commit됐다고 결론 내릴 수 없다. 로그는 DB에 SQL이 전달됐음을 보여주지만, 그 트랜잭션이 나중에 확정됐는지 취소됐는지까지 한 줄의 `UPDATE`가 말해주지는 않는다.
 
 ### 4) RuntimeException 발생 경로의 rollback 과정
+
+> **rollback** = commit되지 않은 트랜잭션 변경을 취소하는 동작
+
+우리 테스트에서는 rollback 이후 원래 상태로 돌아왔는지를 재조회로 직접 검증한다.
+
+```java
+assertThrows(
+        RuntimeException.class, () -> rollbackScenarioService.cancelThenFail(saved.getId())
+);
+
+Reservation found = reservationRepository
+        .findById(saved.getId())
+        .orElseThrow();
+
+assertTrue(found.isConfirmed());
+assertNull(found.getCancelReason());
+```
+
+```text
+관리 중인 Entity 상태 변경
+→ (실험에 따라) flush로 UPDATE 전송 또는 미전송
+→ RuntimeException이 트랜잭션 경계 밖으로 전달
+→ rollback
+→ 재조회 시 confirmed=true, cancelReason=null (원래 상태)
+```
 
 테스트에서는 관리 중인 Entity를 변경한 뒤 `RuntimeException`을 트랜잭션 경계 밖으로 전달했다. Spring의 기본 rollback 규칙에서는 이 예외로 정상 반환 경로가 중단되고 commit 대신 rollback이 선택된다.
 
@@ -79,17 +145,40 @@ SQL 로그에 `UPDATE`가 보였다는 사실만으로 commit됐다고 결론 �
 
 두 번째 실험에서는 예외 전에 `entityManager.flush()`를 명시했다. 이번에는 `UPDATE`가 분명히 실행됐지만 아직 commit 전이었고, 이어진 예외로 rollback됐다. 새 트랜잭션에서 다시 조회하자 `confirmed=true`, `cancelReason=null`이었다.
 
-오늘 사용한 기본 규칙은 모든 Java 예외에 똑같이 적용되는 규칙이 아니다. 별도 설정이 없다면 `RuntimeException`과 `Error`는 rollback 대상이지만 checked exception은 기본적으로 그렇지 않다. 이 글에서는 실제로 실행한 `RuntimeException` 경로까지만 검증했다.
+![시퀀스 다이어그램. 참여자는 테스트, @Transactional Service, 영속성 컨텍스트, H2이다. alt 프레임이 두 갈래로 갈린다. 정상 반환 갈래에서는 테스트가 cancel(id, reason)을 호출하고, Service가 findById(id)로 영속성 컨텍스트를 거쳐 H2에 SELECT를 보내 행 1건과 스냅샷을 얻는다. Service가 reservation.cancel(reason)으로 메모리 객체를 바꾼 뒤 정상 반환하면 flush의 변경 감지로 UPDATE가 전송되고 COMMIT된다. 새 트랜잭션의 재조회 SELECT는 confirmed=false와 "일정 변경"을 돌려준다. RuntimeException 갈래에서는 cancelThenFail(id)가 같은 조회와 cancel("강제 실패") 뒤 entityManager.flush()로 UPDATE를 보낸다. 이어서 RuntimeException을 던지자 ROLLBACK되고 예외가 테스트로 전달된다. 재조회 SELECT는 confirmed=true와 null을 돌려준다. 하단 주석은 두 경로 모두 UPDATE가 전송되었고 최종 상태를 가르는 것은 COMMIT과 ROLLBACK이라고 설명한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day15-transaction-boundary.png)
 
-![시퀀스 다이어그램. 참여자는 테스트, @Transactional Service, 영속성 컨텍스트, H2이다. alt 프레임이 두 갈래로 갈린다. 정상 반환 갈래에서는 테스트가 cancel(id, reason)을 호출하고, Service가 findById(id)로 영속성 컨텍스트를 거쳐 H2에 SELECT를 보내 행 1건과 스냅샷을 얻는다. Service가 reservation.cancel(reason)으로 메모리 객체를 바꾼 뒤 정상 반환하면 flush의 변경 감지로 UPDATE가 전송되고 COMMIT된다. 새 트랜잭션의 재조회 SELECT는 confirmed=false와 "일정 변경"을 돌려준다. RuntimeException 갈래에서는 cancelThenFail(id)가 같은 조회와 cancel("강제 실패") 뒤 entityManager.flush()로 UPDATE를 보낸다. 이어서 RuntimeException을 던지자 ROLLBACK되고 예외가 테스트로 전달된다. 재조회 SELECT는 confirmed=true와 null을 돌려준다. 하단 주석은 두 경로 모두 UPDATE가 전송되었고 최종 상태를 가르는 것은 COMMIT과 ROLLBACK이라고 설명한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day15-transaction-boundary.png)
+> **보장 범위** — 오늘 사용한 기본 규칙은 모든 Java 예외에 똑같이 적용되는 규칙이 아니다. 별도 설정이 없다면 `RuntimeException`과 `Error`는 rollback 대상이지만 checked exception은 기본적으로 그렇지 않다. 이 글에서는 실제로 실행한 `RuntimeException` 경로까지만 검증했다.
 
 ### 5) `readOnly=true`의 역할과 보장 범위
+
+> **Read-Only Transaction** = 조회 전용 의도를 전달해 최적화에 활용될 수 있는 트랜잭션 힌트
+
+이번 커밋의 코드에는 `readOnly=true`가 적용된 메서드가 없다. 조회 전용 Service에 적용할 수 있는 옵션으로만 검토했다.
+
+```text
+@Transactional(readOnly = true) 선언
+→ Spring/JPA 구현체가 조회 전용 의도로 인식
+→ flush 방식·변경 감지 비용 최적화에 활용 가능
+→ DB 쓰기 권한 자체는 그대로 유지됨
+```
 
 조회 Service에는 `@Transactional(readOnly = true)`로 “이 작업은 조회 전용”이라는 의도를 표현할 수 있다. Spring과 JPA 구현체는 이 정보를 flush 방식과 변경 감지 비용을 조정하는 최적화 힌트로 활용할 수 있다.
 
 하지만 `readOnly=true`는 사용자의 DB 쓰기 권한을 제거하지 않는다. Java 문법상 `save()` 호출을 막지도 않고, 모든 DB와 드라이버 조합에서 `INSERT`·`UPDATE`가 반드시 실패한다고 보장하지도 않는다.
 
-따라서 이 옵션은 보안 경계가 아니다. 쓰기를 확실히 막아야 한다면 DB 사용자 권한, 애플리케이션 구조, 테스트 같은 별도 장치가 필요하다. `readOnly`의 역할은 조회 의도를 드러내고 가능한 최적화를 돕는 데 있다.
+> **보장 범위** — 이 옵션은 보안 경계가 아니다. 쓰기를 확실히 막아야 한다면 DB 사용자 권한, 애플리케이션 구조, 테스트 같은 별도 장치가 필요하다. `readOnly`의 역할은 조회 의도를 드러내고 가능한 최적화를 돕는 데 있으며, 오늘은 실제 쓰기 차단 여부를 실행하지 않았다.
+
+### 6) 용어 한줄뜻
+
+| 용어 | 한줄뜻 |
+|---|---|
+| Transaction Boundary | 여러 DB 작업을 전부 성공시키거나 전부 취소시키는 하나의 단위로 묶은 범위 |
+| Persistence Context | 조회된 Entity를 관리 상태로 유지하며 스냅샷과 비교하는 영역 |
+| Dirty Checking | 관리 중인 Entity의 현재 상태와 스냅샷을 비교해 변경분을 찾아내는 동작 |
+| flush | 영속성 컨텍스트의 변경 내용을 SQL로 DB에 전송하는 동작 |
+| commit | 트랜잭션에서 수행한 변경을 최종 확정하는 동작 |
+| rollback | commit되지 않은 트랜잭션 변경을 취소하는 동작 |
+| Read-Only Transaction | 조회 전용 의도를 전달해 최적화에 활용될 수 있는 트랜잭션 힌트 |
 
 > **더 볼 것**
 > - [Spring 선언적 트랜잭션 구현](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-decl-explained.html): AOP 프록시와 `TransactionInterceptor`의 트랜잭션 구동 구조
@@ -113,6 +202,12 @@ public Reservation cancel(Long id, String cancelReason) {
     return reservation;
 }
 ```
+
+**한 줄씩 보기**
+- `@Transactional`: 메서드 진입 시 트랜잭션이 시작되고, 정상 반환 시 commit, 예외 시 rollback으로 이어진다.
+- `findById(id).orElseThrow(...)`: 예약을 조회하고, 없으면 즉시 취소 처리를 중단한다.
+- `reservation.cancel(cancelReason)`: 조회로 얻은 영속 Entity를 메모리에서 변경한다. 이 변경이 Dirty Checking의 대상이 된다.
+- `return reservation`: 메서드가 정상 반환되면 flush 시점에 변경 감지가 일어나 `UPDATE`가 전송되고, 이어서 commit된다.
 
 기존 코드의 `reservationRepository.save(reservation)`는 제거했다. 조회와 상태 변경이 같은 트랜잭션 안에 있으므로 `reservation`은 메서드가 끝날 때까지 관리 상태이고, 변경 감지가 UPDATE를 만든다.
 
@@ -181,6 +276,31 @@ public void cancelThenFail(Long id) {
 권한, 힌트, 검증은 서로 다른 장치다. 이름이 강하게 들리더라도 문법상 호출 가능 여부, 프레임워크의 최적화, DB의 실제 권한을 나눠 확인해야 한다.
 
 ## 4. 학습 정리와 다음 범위
+
+### 1) 전체 흐름 다시 보기
+
+오늘 관찰한 `cancel()` 호출은 정상 반환과 예외 발생에서 서로 다른 DB 결과로 이어진다. 두 경로를 나란히 정리하면 다음과 같다.
+
+```text
+[정상 반환]
+ReservationController → ReservationService.cancel() 진입
+→ @Transactional 시작
+→ findById()로 Reservation 조회 (영속 상태)
+→ reservation.cancel()로 상태 변경 (Dirty Checking 대상)
+→ cancel() 정상 반환
+→ flush: 스냅샷과 비교해 UPDATE 전송
+→ commit: 변경 확정
+
+[예외]
+ReservationController → ReservationService.cancel() 진입
+→ @Transactional 시작
+→ findById()로 Reservation 조회
+→ 상태 변경 (필요 시 명시적 flush로 UPDATE 선전송)
+→ RuntimeException 발생, 트랜잭션 경계 밖으로 전달
+→ rollback: commit되지 않은 변경을 취소
+```
+
+### 2) 이해의 변화와 남은 것
 
 이번 실험 전에는 `@Transactional`을 “예외가 나면 알아서 되돌리는 애노테이션” 정도로 볼 수 있었다. 이제는 Service 메서드 전체를 업무 단위로 정하고, 그 안에서 영속성 컨텍스트가 Entity를 관리하며, 정상 종료와 예외가 각각 commit과 rollback 경로를 선택한다고 순서대로 설명할 수 있다.
 

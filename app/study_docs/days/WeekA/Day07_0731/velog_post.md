@@ -129,7 +129,7 @@ Controller.cancel(id)에서 ReservationNotFoundException 전파
 
 `Exception` 처리기가 함께 있어도 404가 나온다는 점은 MockMvc 테스트 `cancelReturns404WhenReservationDoesNotExist()`로 확인했다. 처리기 선택이 가장 넓은 타입 쪽으로 빠지지 않았다는 증거다.
 
-![시퀀스 다이어그램. 참여자는 MockMvc(DispatcherServlet), ReservationController, ReservationService, InMemoryReservationRepository, GlobalExceptionHandler다. POST cancel 요청이 Controller의 cancel(id), Service의 findById(id)로 이어진다. alt 프레임의 첫 구획은 id가 저장소에 있는 경우로, Repository가 Optional.of(r)을 돌려주고 Service가 r.cancel() 후 save(r)를 호출하며 Repository는 store.set(index, r)로 교체한 뒤 r을 반환하고 최종 응답은 200 OK다. 둘째 구획은 id가 없는 경우로, Repository가 Optional.empty()를 돌려주고 Service의 orElseThrow()가 ReservationNotFoundException을 던진다. 예외는 Controller를 지나 DispatcherServlet으로 전파되고, handleNotFound(ex)가 404와 error JSON을 반환한다. 오류 경로는 빨간색이다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day07-storage-contract.png)
+![시퀀스 다이어그램. 참여자는 MockMvc(DispatcherServlet), ReservationController, ReservationService, InMemoryReservationRepository, GlobalExceptionHandler다. POST cancel 요청이 Controller의 cancel(id), Service의 findById(id)로 이어진다. alt 프레임의 첫 구획은 id가 저장소에 있는 경우로, Repository가 Optional.of(r)을 돌려주고 Service가 r.cancel() 후 save(r)를 호출하며 Repository는 store.set(index, r)로 교체한 뒤 r을 반환하고 최종 응답은 200 OK다. 둘째 구획은 id가 없는 경우로, Repository가 Optional.empty()를 돌려주고 Service의 orElseThrow()가 ReservationNotFoundException을 던진다. 예외는 Controller를 지나 DispatcherServlet으로 전파되고, handleNotFound(ex)가 404와 error JSON을 반환한다. 오류 경로는 빨간색이다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day07-storage-contract.png)
 
 예상하지 못한 예외는 다르게 다룬다. Day03의 `handleUnexpected()`는 `ex.getMessage()`를 그대로 500 본문에 실었다. 예외 메시지에는 내부 클래스, DB 접속 정보, 파일 경로 같은 구현 세부가 들어갈 수 있다.
 
@@ -299,7 +299,7 @@ public ResponseEntity<Map<String, String>> handleUnexpected(Exception ex) {
 - **수동 확인** — 이날은 `curl.exe` 같은 수동 호출 기록을 남기지 않았다. HTTP 경로는 MockMvc로만 확인했다.
 - **미검증** — 수정 전 코드를 대상으로 실패 테스트를 먼저 실행한 기록은 없으므로 TDD의 red-green 순서를 수행했다고 주장하지 않는다. HTTP 요청으로 500을 일으키는 경로도 테스트하지 않았다.
 
-구현·테스트와 Day06·07 산출물: [commit `6c88dcb`](https://github.com/enderpawar/8week_Spring_Study/commit/6c88dcb)
+구현·테스트와 Day06·07 산출물: [commit `6c88dcb`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/6c88dcb)
 
 ## 3. 스스로 답한 질문
 
@@ -337,7 +337,7 @@ D7에서는 상세 원인과 stack trace를 서버 로그에 남기고, 응답�
 
 오늘 계약을 고정한 Service·예외 처리기 단위 테스트는 피라미드 맨 아래 Unit Tests에, 포트 없이 HTTP 요청·응답 경계를 거치는 MockMvc 테스트는 그 위 Service Tests 쪽에 놓인다. 오늘 추가한 테스트 전체가 어느 층을 채웠는지 한 장으로 보면 다음과 같다.
 
-![Mike Cohn의 테스트 피라미드. 아래에서 위로 Unit Tests, Service Tests, UI Tests 세 층이 쌓여 있고, 아래층일수록 넓다. 왼쪽 화살표는 아래가 more isolation, 위가 more integration임을, 오른쪽 화살표는 아래가 faster, 위가 slower임을 나타낸다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day07-overview-test-pyramid.png)
+![Mike Cohn의 테스트 피라미드. 아래에서 위로 Unit Tests, Service Tests, UI Tests 세 층이 쌓여 있고, 아래층일수록 넓다. 왼쪽 화살표는 아래가 more isolation, 위가 more integration임을, 오른쪽 화살표는 아래가 faster, 위가 slower임을 나타낸다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day07-overview-test-pyramid.png)
 
 *출처: [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html) — Ham Vocke, martinfowler.com. 저작권은 원저작자에게 있습니다.*
 
@@ -358,7 +358,7 @@ D7에서는 상세 원인과 stack trace를 서버 로그에 남기고, 응답�
 
 ---
 
-오늘 공부한 소스코드: `InMemoryReservationRepository`, `ReservationService`, `GlobalExceptionHandler`, `ReservationNotFoundException`, `ReservationController`와 그 테스트 ([`6c88dcb`](https://github.com/enderpawar/8week_Spring_Study/commit/6c88dcb))
+오늘 공부한 소스코드: `InMemoryReservationRepository`, `ReservationService`, `GlobalExceptionHandler`, `ReservationNotFoundException`, `ReservationController`와 그 테스트 ([`6c88dcb`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/6c88dcb))
 
 <!-- 선택 복습 메모: 게시 화면에는 노출하지 않는다.
 ### 1) 선택 추가 설명

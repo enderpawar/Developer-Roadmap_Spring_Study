@@ -106,7 +106,7 @@ Entity가 관리 상태가 되는 경로는 조회만이 아니다. `save()`로 
 
 Hibernate 공식 문서는 Entity 인스턴스가 영속성 컨텍스트에 대해 가질 수 있는 상태와 그 전이를 다음처럼 그린다.
 
-![Hibernate 엔티티 상태 전이도. Transient 상태의 인스턴스는 persist()로 Persistent(관리) 상태가 되고, remove()로 다시 Transient로 돌아간다. Persistent 상태에서 evict(), clear(), close()를 호출하면 Detached 상태로 넘어간다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day11-web-hibernate-entity-lifecycle.png)
+![Hibernate 엔티티 상태 전이도. Transient 상태의 인스턴스는 persist()로 Persistent(관리) 상태가 되고, remove()로 다시 Transient로 돌아간다. Persistent 상태에서 evict(), clear(), close()를 호출하면 Detached 상태로 넘어간다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day11-web-hibernate-entity-lifecycle.png)
 
 *출처: [A Short Guide to Hibernate 7 — 5.1. Persistence contexts](https://docs.hibernate.org/orm/7.4/introduction/html_single/Hibernate_Introduction.html#persistence-contexts) — Hibernate ORM 7 문서, Apache License 2.0*
 
@@ -153,7 +153,7 @@ select r1_0.id, r1_0.confirmed, r1_0.requester_name, r1_0.room_name from reserva
 
 `flush()` 없이 `clear()`만 하면 아직 SQL이 되지 않은 변경이 컨텍스트와 함께 버려질 수 있다. 오늘은 항상 `flush()` 뒤에 `clear()`를 불렀고, 순서를 뒤집은 경우는 실행하지 않았다(미검증).
 
-![시퀀스 다이어그램. 테스트가 save(reservation)를 호출하면 Repository가 영속성 컨텍스트에 영속 상태로 등록하고, flush() 시점에 컨텍스트가 H2로 INSERT를 보낸다. 이후 alt 프레임이 두 갈래로 갈린다. clear()를 호출하지 않은 갈래에서는 findById(id) 두 번이 모두 캐시 조회에서 끝나고 인스턴스 r을 돌려주며, H2 생명선에는 화살표가 하나도 닿지 않는다. clear()를 호출한 갈래에서는 첫 findById(id)만 컨텍스트가 H2로 SELECT를 보내 행 1건을 받아오고, 두 번째 findById(id)는 다시 캐시 조회에서 끝나 같은 인스턴스 r을 돌려준다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day11-first-level-cache.png)
+![시퀀스 다이어그램. 테스트가 save(reservation)를 호출하면 Repository가 영속성 컨텍스트에 영속 상태로 등록하고, flush() 시점에 컨텍스트가 H2로 INSERT를 보낸다. 이후 alt 프레임이 두 갈래로 갈린다. clear()를 호출하지 않은 갈래에서는 findById(id) 두 번이 모두 캐시 조회에서 끝나고 인스턴스 r을 돌려주며, H2 생명선에는 화살표가 하나도 닿지 않는다. clear()를 호출한 갈래에서는 첫 findById(id)만 컨텍스트가 H2로 SELECT를 보내 행 1건을 받아오고, 두 번째 findById(id)는 다시 캐시 조회에서 끝나 같은 인스턴스 r을 돌려준다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day11-first-level-cache.png)
 
 > **보장 범위** — `flush()` → `clear()` 순서로 호출했을 때 SELECT가 정확히 1번 나가고 두 조회가 같은 인스턴스라는 것만 확인했다. `clear()` 전에 받은 인스턴스와 `clear()` 후에 받은 인스턴스를 직접 비교하지는 않았다. 테스트는 `clear()` 이후의 두 조회끼리만 비교한다(미검증 범위).
 
@@ -242,7 +242,7 @@ jpa:
       format_sql: true
 ```
 
-두 조건 모두 자동 테스트로 실행했고, SELECT 횟수는 Hibernate SQL 로그(`show-sql: true`)를 보고 셌다. 수동 HTTP 확인은 하지 않았다. 코드는 [9e3dfc3](https://github.com/enderpawar/8week_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 있다.
+두 조건 모두 자동 테스트로 실행했고, SELECT 횟수는 Hibernate SQL 로그(`show-sql: true`)를 보고 셌다. 수동 HTTP 확인은 하지 않았다. 코드는 [9e3dfc3](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/9e3dfc3a3956d03e68588499e7a54772a7a6d599)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -272,7 +272,7 @@ jpa:
 
 오늘 관찰한 조회 경로를 `EntityManager`가 Entity를 돌려줄 때 영속성 컨텍스트가 어디에 있고, 캐시에 없을 때 DB까지 어떤 경로로 내려가는지 한 장으로 보면 다음과 같다. 이 프로젝트는 2차 캐시를 켜지 않았으므로 아래쪽 Second-Level Cache 경로는 건너뛰고 `Loader`가 바로 H2에 SELECT를 보낸다.
 
-![Hibernate의 Entity 로딩 구조. EntityManager는 Persistence Context에서 Entity를 받는다. 컨텍스트에 없으면 DefaultLoadEventListener가 Loader를 통해 DB에서 행을 읽어 Object[] 형태의 loaded state로 바꾸고, 2차 캐시가 켜져 있으면 CachedDomainDataAccess를 통해 2차 캐시에서 먼저 Object[]를 가져온다. 리스너는 만든 Entity와 Object[] loaded state(변경 감지용 스냅샷)를 함께 Persistence Context에 넣고, EntityManager가 그 Entity를 반환한다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day11-overview-first-level-cache-loading.png)
+![Hibernate의 Entity 로딩 구조. EntityManager는 Persistence Context에서 Entity를 받는다. 컨텍스트에 없으면 DefaultLoadEventListener가 Loader를 통해 DB에서 행을 읽어 Object[] 형태의 loaded state로 바꾸고, 2차 캐시가 켜져 있으면 CachedDomainDataAccess를 통해 2차 캐시에서 먼저 Object[]를 가져온다. 리스너는 만든 Entity와 Object[] loaded state(변경 감지용 스냅샷)를 함께 Persistence Context에 넣고, EntityManager가 그 Entity를 반환한다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day11-overview-first-level-cache-loading.png)
 
 *출처: [The JPA and Hibernate first-level cache](https://vladmihalcea.com/jpa-hibernate-first-level-cache/) — Vlad Mihalcea. 저작권은 원저작자에게 있습니다.*
 

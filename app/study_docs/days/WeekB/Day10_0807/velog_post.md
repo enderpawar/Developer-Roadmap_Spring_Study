@@ -96,7 +96,7 @@ public interface SpringDataReservationRepository extends JpaRepository<Reservati
 
 `JpaRepository<Reservation, Long>`의 두 타입 인자는 어떤 Entity를, 어떤 타입의 id로 다루는지를 알려준다.
 
-![클래스 다이어그램. ReservationService가 «interface» ReservationRepository를 생성자 주입으로 참조하고, «@Repository» JpaReservationRepository가 그 인터페이스를 «realize»한다. JpaReservationRepository는 delegate 필드로 «interface» SpringDataReservationRepository를 주입받고, 그 인터페이스는 오퍼레이션 칸이 비어 있는 채로 JpaRepository<Reservation, Long>를 상속한다. 왼쪽 아래의 «@Entity» Reservation은 roomName·requesterName·confirmed·id가 모두 private이고 id에 «@Id, IDENTITY»가 붙어 있으며, 생성자 Reservation()은 protected다. 노트는 Spring Data가 기동 시 이 인터페이스를 찾아 구현 객체를 만들어 Bean으로 등록한다는 것과 기동 로그의 "Found 1 JPA repository interface."를 가리킨다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day10-jpa-adapter.png)
+![클래스 다이어그램. ReservationService가 «interface» ReservationRepository를 생성자 주입으로 참조하고, «@Repository» JpaReservationRepository가 그 인터페이스를 «realize»한다. JpaReservationRepository는 delegate 필드로 «interface» SpringDataReservationRepository를 주입받고, 그 인터페이스는 오퍼레이션 칸이 비어 있는 채로 JpaRepository<Reservation, Long>를 상속한다. 왼쪽 아래의 «@Entity» Reservation은 roomName·requesterName·confirmed·id가 모두 private이고 id에 «@Id, IDENTITY»가 붙어 있으며, 생성자 Reservation()은 protected다. 노트는 Spring Data가 기동 시 이 인터페이스를 찾아 구현 객체를 만들어 Bean으로 등록한다는 것과 기동 로그의 "Found 1 JPA repository interface."를 가리킨다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day10-jpa-adapter.png)
 
 > **보장 범위** — 기동 로그의 "Found 1 JPA repository interface."와 테스트 통과로 구현체가 등록되고 동작한다는 것까지 확인했다. 구현 객체의 내부 구조는 오늘 열어보지 않았다(미검증).
 
@@ -273,7 +273,7 @@ Day9 JDBC 구현은 같은 흐름에서 무조건 INSERT하여 복제 행을 만
 | 기존 ID 저장 시 중복 행 | 자동 — 저장 전후 행 수와 같은 `id` 행 개수 비교 | 행 수 +1, 같은 `id` 한 행, `confirmed=false` |
 | 실제 취소 요청의 SQL 횟수 | **미검증** — 테스트 안에서만 관찰 | 1절 `save()` 소절 |
 
-전체 `./gradlew clean test`는 12개 통과한다. 코드는 [ff795f9](https://github.com/enderpawar/8week_Spring_Study/commit/ff795f9214a74ab37391c80f4a2bc6216c3d6e2a), 그림은 [3b398d1](https://github.com/enderpawar/8week_Spring_Study/commit/3b398d1a50cc78412b44ec5016756705ac8bc83c)에 있다.
+전체 `./gradlew clean test`는 12개 통과한다. 코드는 [ff795f9](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/ff795f9214a74ab37391c80f4a2bc6216c3d6e2a), 그림은 [3b398d1](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/commit/3b398d1a50cc78412b44ec5016756705ac8bc83c)에 있다.
 
 ## 3. 스스로 답한 질문
 
@@ -314,7 +314,7 @@ assertEquals(countBeforeSave + 1, reservations.size());
 
 Repository 호출 한 번이 Spring Data JPA → JPA(명세) → Hibernate(구현) → JDBC를 차례로 지나 DB에 닿는 전체 층 구조를 한 장으로 보면 다음과 같다.
 
-![계층도. 맨 위 Application에서 두 경로가 내려온다. 초록 화살표 "Repository 사용"은 Spring Data JPA(Repository) 층으로, 빨간 화살표 "Raw JPA 사용(e.g. EntityManager 사용)"은 그 아래 JPA 층으로 바로 들어간다. Spring Data JPA와 JPA는 초록 테두리로 함께 묶여 있고, JPA 아래에 Hibernate, 그 아래에 JDBC가 쌓이며, JDBC가 맨 아래 Relational Database와 양방향으로 연결된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day10-overview-jpa-stack.png)
+![계층도. 맨 위 Application에서 두 경로가 내려온다. 초록 화살표 "Repository 사용"은 Spring Data JPA(Repository) 층으로, 빨간 화살표 "Raw JPA 사용(e.g. EntityManager 사용)"은 그 아래 JPA 층으로 바로 들어간다. Spring Data JPA와 JPA는 초록 테두리로 함께 묶여 있고, JPA 아래에 Hibernate, 그 아래에 JDBC가 쌓이며, JDBC가 맨 아래 Relational Database와 양방향으로 연결된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day10-overview-jpa-stack.png)
 
 *출처: [JPA, Hibernate, 그리고 Spring Data JPA의 차이점](https://suhwan.dev/2019/02/24/jpa-vs-hibernate-vs-spring-data-jpa/) — suhwan.dev. 저작권은 원저작자에게 있습니다.*
 

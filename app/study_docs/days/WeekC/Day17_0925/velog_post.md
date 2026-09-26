@@ -11,7 +11,7 @@ Day16에서는 애노테이션과 실행 주체(Spring AOP 프록시)가 분리�
 
 REQUIRED와 REQUIRES_NEW의 차이는 결국 "outer가 실패했을 때 inner의 커밋이 몇 개의 트랜잭션에 속해 있었는가"로 갈린다.
 
-![REQUIRED에서는 reserveThenFail의 예외가 트랜잭션 A 전체를 롤백해 inner가 저장한 예약까지 사라지지만, REQUIRES_NEW에서는 inner가 트랜잭션 A를 보류하고 별도 트랜잭션 B를 열어 커밋하므로 A만 롤백되고 예약은 남는 시퀀스 비교](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day17-transaction-propagation.png)
+![REQUIRED에서는 reserveThenFail의 예외가 트랜잭션 A 전체를 롤백해 inner가 저장한 예약까지 사라지지만, REQUIRES_NEW에서는 inner가 트랜잭션 A를 보류하고 별도 트랜잭션 B를 열어 커밋하므로 A만 롤백되고 예약은 남는 시퀀스 비교](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day17-transaction-propagation.png)
 
 ## 1. 개념 설명
 
@@ -41,7 +41,7 @@ reserveThenFail() 호출 → 트랜잭션 A 시작
 
 처음엔 "같은 트랜잭션 범위에 포함되서"라고만 답했다가, "있으면 롤백, 없으면 저장"으로 판단 기준을 잘못 짚었다. 실제로는 롤백 여부가 아니라 **새 트랜잭션을 만드는가**가 REQUIRED의 판단 기준이다. 이 REQUIRED 동작은 이후 `reserve()`를 `REQUIRES_NEW`로 바꾸며 코드에서 대체됐다 — `noneMatch`로 롤백을 확인한 실행 로그는 남아 있지만, 현재 커밋의 소스에는 REQUIRED 버전의 테스트가 남아 있지 않다(2절 참고).
 
-![REQUIRED는 reserveThenFail()이 시작한 트랜잭션 A의 단일 경계 안에 reserve()가 그대로 합류하는 구조를 보여준다. 두 메서드가 같은 경계 안에 있어 커넥션도 1개만 유지되고, 예외가 발생하면 A 전체가 rollback되어 reserve()의 INSERT까지 함께 취소된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day17-required-tx-boundary.png)
+![REQUIRED는 reserveThenFail()이 시작한 트랜잭션 A의 단일 경계 안에 reserve()가 그대로 합류하는 구조를 보여준다. 두 메서드가 같은 경계 안에 있어 커넥션도 1개만 유지되고, 예외가 발생하면 A 전체가 rollback되어 reserve()의 INSERT까지 함께 취소된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day17-required-tx-boundary.png)
 
 ### 2) REQUIRES_NEW — 독립된 트랜잭션 분리
 
@@ -71,7 +71,7 @@ reserveThenFail() 호출 → 트랜잭션 A 시작
 
 `REQUIRES_NEW`로 바꾸기 전 "예약이 남아있을 것"이라고 예측했고, `reservationRepository.findAll().stream().anyMatch(r -> r.getRoomName().equals("D-101"))`가 `true`로 확인돼 예측과 일치했다. 두 경로의 시퀀스 비교는 서두 그림 참고. 다만 `assertThrows`와 `anyMatch` 두 assertion으로 "예외가 발생했다"와 "예약이 남았다"까지만 확인했고, 트랜잭션 B가 정확히 언제 커밋되는지(메서드 반환 시인지, 다른 시점인지)는 Spring 소스코드까지 따라가 검증하지 않았다.
 
-![REQUIRES_NEW는 reserveThenFail()의 트랜잭션 A를 보류(점선 경계)하고 reserve()가 완전히 독립된 트랜잭션 B(실선 경계)를 새로 여는 구조를 보여준다. 보류된 A와 신규 B가 겹치는 구간에는 커넥션이 동시에 2개 필요하고, B가 커밋을 마치면 A가 재개돼 outer 예외로 A만 rollback된다.](https://raw.githubusercontent.com/enderpawar/8week_Spring_Study/master/app/study_docs/assets/day17-requiresnew-tx-boundary.png)
+![REQUIRES_NEW는 reserveThenFail()의 트랜잭션 A를 보류(점선 경계)하고 reserve()가 완전히 독립된 트랜잭션 B(실선 경계)를 새로 여는 구조를 보여준다. 보류된 A와 신규 B가 겹치는 구간에는 커넥션이 동시에 2개 필요하고, B가 커밋을 마치면 A가 재개돼 outer 예외로 A만 rollback된다.](https://raw.githubusercontent.com/enderpawar/Developer-Roadmap_Spring_Study/master/app/study_docs/assets/day17-requiresnew-tx-boundary.png)
 
 ### 3) 커넥션 풀 고갈 위험
 
@@ -130,7 +130,7 @@ void requiresNewSurviesOuterFailure() {
 | REQUIRES_NEW의 예외 발생과 예약 생존 | `requiresNewSurviesOuterFailure()` | `assertThrows` + `anyMatch` 통과 |
 | 전체 스위트 회귀 | `./gradlew test` | 23개 테스트 전체 통과 |
 
-수동 확인은 REQUIRED 상태에서 `noneMatch`로 롤백을 먼저 확인한 실행 로그다(코드는 REQUIRES_NEW로 대체됨). 커밋: [`2933d93`](https://github.com/enderpawar/8week_Spring_Study/blob/2933d93/app/src/test/java/com/example/studyroom/service/TransactionPropagationTest.java)
+수동 확인은 REQUIRED 상태에서 `noneMatch`로 롤백을 먼저 확인한 실행 로그다(코드는 REQUIRES_NEW로 대체됨). 커밋: [`2933d93`](https://github.com/enderpawar/Developer-Roadmap_Spring_Study/blob/2933d93/app/src/test/java/com/example/studyroom/service/TransactionPropagationTest.java)
 
 ## 3. 스스로 답한 질문
 
