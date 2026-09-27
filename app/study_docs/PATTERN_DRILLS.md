@@ -646,6 +646,295 @@ public String giveBack(@PathVariable @Positive(message = "...") Long id,
 
 ---
 
+# 묶음 8 — 트랜잭션·프록시·Fetch 전략 (D22~D26)
+
+## D22. 트랜잭션 경계 (↔ P22)
+
+```java
+@____________
+public Loan returnBook(Long id) {
+    Loan loan = loanRepository.findById(id)
+            .orElseThrow(() -> new LoanNotFoundException(id));
+    loan.____________();                     // (1) save() 없이 반영되려면 무엇을 호출해야 하나
+    return loan;
+}
+```
+
+**추가 질문:** 이 메서드에 `readOnly = true`를 붙이면 안 되는 이유는?
+
+---
+
+## D23. 트랜잭션 전파 (↔ P23)
+
+**판정 문제** — `LoanService.returnThenFail()`(`@Transactional`, 저장 후 예외)이 `PenaltyService.charge()`를 호출한다. 아래 두 경우 각각 `charge()`가 만든 연체료 기록이 살아남는지(O/X) 쓰시오.
+
+| # | `charge()`의 propagation | 살아남는가(O/X) |
+|---|---|---|
+| ① | 미지정(기본값) | |
+| ② | `REQUIRES_NEW` | |
+
+**추가 질문:** ②의 경우 동시에 몇 개의 DB 커넥션이 필요하며, 풀 크기보다 동시 요청이 많아지면 무슨 일이 생기는가?
+
+---
+
+## D24. 연관관계 + LAZY 프록시 (↔ P24)
+
+```java
+// Loan(N) → Book(1)
+@____________(fetch = FetchType.____________)
+@____________(name = "____________")
+private Book book;
+
+// Book → List<Loan> (역방향)
+@____________(mappedBy = "____________", fetch = FetchType.____________)
+private List<Loan> loans = new ____________<>();
+```
+
+**판정 문제** — `loan.getBook().getClass()`를 재조회 직후 호출하면 정확히 `Book`으로 나오는가? `loan.getBook()`(단일 참조)와 `book.getLoans()`(컬렉션)를 각각 미초기화 상태로 조회했을 때 런타임 타입은 같은가, 다른가?
+
+---
+
+## D25. N+1과 fetch join (↔ P25)
+
+```java
+@Query("select l from Loan l ____________ ____________ l.book")   // (1) N+1을 없애는 키워드 두 개
+List<Loan> findAllWithBook();
+```
+
+```java
+@Test
+void findAllWithBookUsesSingleJoinQuery() {
+    Statistics statistics = entityManager.getEntityManagerFactory()
+            .____________(SessionFactory.class).getStatistics();     // (2)
+    statistics.clear();
+    loanRepository.findAllWithBook();
+    assertEquals(____________, statistics.getPrepareStatementCount()); // (3) 기대값
+}
+```
+
+**추가 질문:** `findAllWithBook()`을 추가했더니 `LoanRepository`를 구현하는 대조군 클래스가 컴파일 에러를 냈다. 시그니처를 그대로 두고 컴파일만 통과시키는 방법은?
+
+---
+
+## D26. Inner Join Fetch vs Left Join Fetch (↔ P26)
+
+**판정 문제** — `book_id`가 `null`인(분실 처리된) `Loan`이 있다고 하자. 아래 두 쿼리를 각각 실행하면 그 행이 결과에 포함되는가(O/X)?
+
+| # | 쿼리 | 포함되는가(O/X) |
+|---|---|---|
+| ① | `select l from Loan l join fetch l.book` | |
+| ② | `select l from Loan l left join fetch l.book` | |
+
+```java
+@____________(readOnly = ____________)                    // (1)(2)
+public List<LoanSummary> findAllSummaries() {
+    return loanRepository.____________().stream()          // (3) 어느 쿼리 메서드를 써야 하나
+            .map(l -> new LoanSummary(l.getBookTitle(),
+                    l.getBook() == null ? null : l.getBook().getTitle()))
+            .toList();
+}
+```
+
+**추가 질문:** 기존 `join fetch` 메서드를 `left join`으로 그냥 바꾸지 않고 새 메서드를 추가하는 이유는 언제 정당화되는가?
+
+---
+
+# 묶음 9 — 인증·테스트 전략 (D27~D32)
+
+## D27. PasswordEncoder Bean과 가입 (↔ P27)
+
+Loan 도메인에 `Librarian`(사서) 로그인 계정을 추가한다고 하자.
+
+```java
+@Configuration
+public class LibrarianPasswordEncoderConfig {
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new ____________________();          // (1) 어떤 구현체를 쓸 것인가
+    }
+}
+
+@Transactional
+public Librarian signup(String loginId, String rawPassword, String name) {
+    if (librarianRepository.____________________(loginId)) {   // (2) 중복 확인 메서드 이름
+        throw new DuplicateLoginIdException(loginId);
+    }
+    String hashed = passwordEncoder.____________________(rawPassword); // (3) 해시 메서드
+    Librarian librarian = new Librarian(name, loginId, hashed);
+    return librarianRepository.save(librarian);
+}
+```
+
+**판정 문제** — 같은 `rawPassword`로 `signup()`을 두 서로 다른 `loginId`로 두 번 호출하면, 저장된 두 `password` 컬럼 값은 같은가 다른가? 이유를 한 문장으로 쓰시오.
+
+**추가 질문**
+- `login_id`/`password` 컬럼을 `NOT NULL`로 걸면 안 되는 기존 코드 상황을 하나 드시오.
+- `PasswordEncoder`를 인터페이스로 주입받는 것과 `BCryptPasswordEncoder`를 직접 타입으로 주입받는 것의 차이는?
+
+---
+
+## D28. JwtProvider 발급·검증 (↔ P28)
+
+```java
+public class LibrarianJwtProvider {
+    private final SecretKey key;
+
+    public LibrarianJwtProvider(String secret) {
+        this.key = Keys.____________________(secret.getBytes(StandardCharsets.UTF_8)); // (1)
+    }
+
+    public String issue(String subject) {
+        return Jwts.builder().____________________(subject)   // (2) 표준 클레임 이름
+                .signWith(key).compact();
+    }
+
+    public String parseSubject(String token) {
+        return Jwts.parser().____________________(key).build()  // (3) 검증용 메서드
+                .parseSignedClaims(token).getPayload().getSubject();
+    }
+}
+```
+
+**판정 문제** — secret이 `"lib-secret"`(10바이트)이면 위 생성자 호출 시 무슨 일이 일어나는가? 예외 이름과, 어느 줄에서 발생하는지 쓰시오.
+
+**추가 질문**
+- 사서 `loginId`가 존재하지 않을 때와 비밀번호가 틀렸을 때, 같은 응답으로 합쳐야 하는 이유는?
+- HS256 대신 RS256을 쓴다면 `key` 필드의 타입과 발급/검증 코드가 어떻게 달라지는가?
+
+---
+
+## D29. SecurityFilterChain과 필터/MVC 예외처리 경계 (↔ P29)
+
+Loan 대출 승인 API에 Security를 추가한다. `/loans/**`는 인증 필요, `POST /loans/{id}/writeoff`(대손상각)는 `ROLE_MANAGER`만 가능해야 한다.
+
+```java
+.authorizeHttpRequests(auth -> auth
+        .requestMatchers(HttpMethod.POST, "/loans/____________/writeoff").hasRole("____________")
+        .anyRequest().authenticated())
+```
+
+**추가 질문**
+- 대출 담당자 본인이 등록한 대출만 조회 가능하게 하려면, 서비스 코드에서 `AccessDeniedException`을 던지는 방식이 위험한 이유를 한 문장으로 쓰시오.
+
+---
+
+## D30. JWT 검증 실패 — 하위타입 전부를 한 절로 포괄 (↔ P30)
+
+`LoanAuthenticationFilter`가 만료된 토큰을 받았을 때 던져지는 예외의 상위 타입은 ________이고, 이를 잡아서 해야 할 일은 `SecurityContextHolder.________()`이다.
+
+**판정 문제** — 위조된 서명과 만료를 같은 `catch` 절 하나로 처리해도 되는 이유는 두 예외가 어떤 관계이기 때문인가?
+
+**추가 질문:** 이 필터가 401을 직접 만들지 않고 흘려보내면, 실제 401은 어느 컴포넌트가 만드는가?
+
+---
+
+## D31. 테스트 슬라이스 분류 (↔ P31)
+
+Loan 도메인에 `LoanController`용 슬라이스 테스트를 추가한다고 하자.
+
+```java
+@____________(LoanController.class)      // (1) Controller 슬라이스 애노테이션
+@____________(addFilters = ____________)  // (2)(3) Security 필터를 끄는 옵션
+class LoanControllerWebMvcTest {
+    @Autowired private MockMvc mockMvc;
+    @____________ private LoanService loanService; // (4) Service를 대역으로 교체
+}
+```
+
+**판정 문제** — `addFilters=false`를 빼고 `GET /loans`(인증 필요 경로)를 200으로 기대하면 실제로는 몇 번이 나오는가? 그 이유를 한 문장으로 쓰시오.
+
+**추가 질문**
+- `@DataJpaTest`로 `LoanRepository`를 검증할 때, Flyway 마이그레이션이 적용되는가 안 되는가?
+- Slice Test의 분류 기준이 "실제 DB 사용 여부"가 아니라 무엇인지 한 문장으로 쓰시오.
+
+---
+
+## D32. 오류 응답 일관성 (↔ P32)
+
+```java
+@ExceptionHandler(LoanOverdueException.class)
+public ResponseEntity<Map<String, Object>> handleOverdue(LoanOverdueException ex) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("error", ex.getMessage());
+    body.put("____________", "____________");   // (1)(2) 클라이언트 분기용 안정 식별자, 값
+    body.put("____________", Instant.now().toString()); // (3) 발생 시각 필드명
+    return ResponseEntity.status(HttpStatus.____________).body(body); // (4) 상태 코드
+}
+```
+
+**판정 문제** — 기존에 `{"error": "..."}`만 반환하던 테스트의 `jsonPath("$.error")` 단언은, 위처럼 필드를 "추가"만 했을 때 깨지는가 안 깨지는가?
+
+**추가 질문**
+- 필터 단계에서 문자열을 직접 조합해 응답하는 컴포넌트와, `@RestControllerAdvice`가 처리 못 하는 이유를 한 문장으로 쓰시오.
+- 오류 응답 형식을 통일할 때, "범위를 부채 항목만큼으로 좁힌다"가 실제로 막아주는 것은 무엇인가?
+
+---
+
+# 묶음 10 — 운영·디버깅·통합 (D33~D38)
+
+## D33. RequestIdFilter/MDC 요청 추적 (↔ P33)
+
+`LoanRequestIdFilter`가 `OncePerRequestFilter`를 상속해 MDC에 ________을(를) 넣고, ________ 블록에서 반드시 제거해야 하는 이유는? `FilterRegistrationBean`에 ________을(를) 지정해 Security 필터체인보다 먼저 실행되게 해야 하는 이유는?
+
+**추가 질문:** 요청 처리를 별도 스레드(`@Async` 등)로 넘기면 MDC 값은 자동으로 따라가는가?
+
+---
+
+## D34. Profile 분리 + fail-fast 비밀값 관리 (↔ P34)
+
+`LoanService`가 운영에서 쓰는 API 키를 `${LOAN_API_KEY}`로 참조할 때, 값이 없으면 ________된다. 그 이유는 ________이다.
+
+**추가 질문:** 이 방식이 "값이 없으면 기본값으로 조용히 뜨는 것"보다 나은 이유는?
+
+---
+
+## D35. 가설-검증 디버깅 (↔ P35)
+
+`LoanRepaymentService.calculateInterest()`의 반올림 버그를 의심할 때, 재현 테스트를 먼저 ________한 뒤 ________ 로그로 중간값을 비교해 원인을 ________한다. 서로 다른 두 테스트가 동일한 실패 메시지를 내면 이는 ________의 증거가 될 수 있다.
+
+**추가 질문:** 재현 커밋과 수정 커밋을 분리하는 것이 한 커밋에 묶는 것보다 나은 이유는?
+
+---
+
+## D36. 멀티스테이지 Dockerfile + Compose healthcheck (↔ P36)
+
+`loan-api` 이미지의 멀티스테이지 빌드에서 1단계는 ________만 갖고, 2단계는 ________만 남긴다. `compose.yaml`에서 `loan-db`에 healthcheck를 걸고 `loan-api`가 ________ 조건으로 대기해야 하는 이유는?
+
+**추가 질문:** `depends_on`만 쓰고 healthcheck 조건을 주지 않으면 왜 위험한가?
+
+---
+
+## D37. CI Job 의존과 실제 실행 검증 (↔ P37)
+
+`loan-ci.yml`에서 `docker` 잡이 `test` 잡의 ________을(를) 기다리게 하려면 ________ 키워드를 쓴다. 로컬 H2 호환 모드에서 통과한 테스트가 실제 ________에서 실패할 수 있는 이유는?
+
+**추가 질문:** CI에서 실패 시 `docker compose logs`를 남기는 것이 왜 필요한가?
+
+---
+
+## D38. 겹침 판정 공식 (↔ P38)
+
+같은 책(`Loan.bookTitle`)을 두 사람이 겹치는 기간(`borrowedAt`~`dueAt`) 동안 대출할 수 없게 만든다.
+
+```java
+@Query("select l from Loan l where l.bookTitle = :bookTitle and l.returned = false " +
+        "and l.borrowedAt is not null and l.dueAt is not null " +
+        "and ______________________ and ______________________")  // (1) 겹침 부등호 두 조건, 등호 없이
+List<Loan> findOverlapping(String bookTitle, LocalDateTime borrowedAt, LocalDateTime dueAt);
+```
+
+- (2) 이 쿼리가 반납된(`returned = true`) 대출을 제외해야 하는 이유를 한 문장으로:
+  ______________________________________________________________
+- (3) 대출 A가 3/1~3/5, 대출 B가 3/5~3/10이면 겹치는가? 근거도 함께:
+  ______________________________________________________________
+
+**완료 판정**
+- [ ] `InMemoryLoanRepository`에도 같은 판정을 순수 자바로 재현
+- [ ] "맞닿는 기간"을 검증하는 테스트 1개 추가
+- [ ] 기존 대출 테스트가 **여전히** 통과(회귀 없음)
+
+---
+
 # 독립 과제 — 0층부터 (자료 안 보고)
 
 드릴을 다 채운 뒤에 한다. **실제 코드로 작성하고, 판정 기준을 통과해야 완료다.**
@@ -707,6 +996,9 @@ public String giveBack(@PathVariable @Positive(message = "...") Long id,
 | 5 | Week B · D12~D14 (JDBC·매핑·환경격리) | | | | |
 | 6 | Week B · D15~D17 (JPA 어댑터·Entity·통합 테스트) | | | | |
 | 7 | Week B · D18~D21 (1차 캐시·변경 감지·CHECK·시그니처 파급) | | | | |
+| 8 | Week C · D22~D26 (트랜잭션·전파·LAZY 프록시·N+1·fetch join) | | | | |
+| 9 | Week D · D27~D32 (해싱·JWT·필터체인·테스트 슬라이스·오류 응답) | | | | |
+| 10 | Week E · D33~D38 (로깅·설정·디버깅·Docker·CI·겹침 검사) | | | | |
 | 과제 A | 목록 조회 0층부터 | | | | |
 | 과제 B | 새 도메인 예외 → 409 | | | | |
 | 과제 C | DTO 제약 추가 | | | | |

@@ -1197,4 +1197,588 @@ public String cancel(@PathVariable @Positive(message = "...") Long id,
 
 # Week C — 트랜잭션·프록시·성능
 
-> Week C 진행 후 작성한다.
+## P22. 트랜잭션 경계 — Service 메서드에 커밋·롤백 원자성 묶기
+
+**[언제]** 조회→상태변경→반영을 하나의 성공/취소 단위로 묶어야 할 때. Controller가 아니라 Service 메서드 경계에 붙인다.
+
+**[골격]**
+```java
+@Transactional
+public Reservation cancel(Long id, String cancelReason) {
+    Reservation reservation = reservationRepository.findById(id)
+            .orElseThrow(() -> new ReservationNotFoundException(id));
+    reservation.cancel(sanitizeCancelReason(cancelReason)); // save() 없이 dirty checking으로 반영
+    return reservation;
+}
+```
+
+**[판단]**
+- 계층 경계(Service)와 트랜잭션 경계를 일치시킨다 — Repository는 이미 조립된 하나의 단계일 뿐이라 경계로 삼지 않는다.
+- 값을 바꾸지 않는 조회 전용 메서드는 `readOnly = true`로 변경 감지·flush 비교를 생략한다(P26 참고).
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `@Transactional`을 Controller에 붙임 | 트랜잭션 범위가 HTTP 요청 전체로 불필요하게 넓어짐 |
+| 명시적 `save()`를 다시 호출 | dirty checking이 이미 반영하므로 불필요 — 헷갈림의 원인만 됨 |
+
+**[근거]** `service/ReservationService.java:51-64` · `ReservationServiceTransactionTest.java`
+
+---
+
+## P23. 트랜잭션 전파 — `REQUIRED`/`REQUIRES_NEW` 판단
+
+**[언제]** 내부 메서드 호출이 이미 진행 중인 트랜잭션에 합류해야 하는지, 실패와 무관하게 독립적으로 커밋돼야 하는지 결정할 때.
+
+**[골격]**
+```java
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public Reservation reserve(String roomName) { ... }
+```
+
+**[판단]**
+- `REQUIRED`(기본값) = 있으면 합류(새로 안 만듦), 없으면 새로 시작. 합류하면 바깥 실패 시 안쪽도 같이 롤백된다.
+- `REQUIRES_NEW` = 있어도 무시하고 항상 새로 시작(기존 것은 보류). 이미 커밋된 안쪽은 바깥 롤백에 영향받지 않는다.
+- `REQUIRES_NEW` 실행 중에는 커넥션 2개(바깥+안쪽)가 동시에 필요하다 — 풀 고갈·병목 위험.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `findAll().isEmpty()`로 "전체 상태"를 검증 | 다른 테스트가 커밋한 데이터 때문에 전체 스위트 실행 시 실패 — `noneMatch/anyMatch`로 특정 레코드만 검증해야 함 |
+| REQUIRED의 판단 기준을 "롤백/저장 여부"로 착각 | 실제 기준은 "새 트랜잭션을 만드는가"다 |
+
+**[근거]** `TransactionPropagationTest.java`
+
+---
+
+## P24. 연관관계 매핑과 Hibernate LAZY 프록시
+
+**[언제]** `@ManyToOne`/`@OneToMany` 연관 필드를 추가할 때. 단일 참조 기본값은 `EAGER`, 컬렉션 기본값은 `LAZY`라는 비대칭을 명심.
+
+**[골격]**
+```java
+// 소유쪽(FK 보유) — Reservation
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "member_id")
+private Member member;
+
+// 역방향(inverse side) — Member
+@OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+private List<Reservation> reservations = new ArrayList<>();
+```
+
+**[판단]**
+- 단일 참조는 `Entity$HibernateProxy`로, 컬렉션은 `PersistentBag`으로 감싸진다 — 이름이 다른 별개의 래퍼다.
+- Spring AOP 프록시(메서드 호출 가로채기)와 Hibernate 프록시(필드 접근 가로채기)는 이름만 같은 별개 장치다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `@ManyToOne`/`@JoinColumn` 애노테이션 누락 | `JdbcTypeRecommendationException`(Hibernate가 일반 컬럼값으로 착각) |
+| `@ManyToOne`을 `@ManyToMany`로 오타 | `AnnotationException`(`CollectionBinder`가 컬렉션 타입 기대) |
+
+**[근거]** `domain/Member.java:29-30` · `domain/Reservation.java:22-24` · `MemberLazyProxyTest.java:49-72`
+
+---
+
+## P25. N+1 확인과 fetch join
+
+**[언제]** LAZY 연관 목록을 순회하며 매번 접근할 때 N+1을 의심하고, `println`이 아니라 `Statistics`로 실측·자동검증할 때.
+
+**[골격]**
+```java
+@Query("select r from Reservation r join fetch r.member")
+List<Reservation> findAllWithMember();
+
+// 테스트
+Statistics statistics = entityManager.getEntityManagerFactory()
+        .unwrap(SessionFactory.class).getStatistics();
+statistics.clear();
+assertEquals(1 + names.length, statistics.getPrepareStatementCount()); // N+1
+assertEquals(1, statistics.getPrepareStatementCount());                // fetch join
+```
+
+**[판단]**
+- fetch join은 매핑을 바꾸지 않는다 — **그 쿼리 메서드 하나에만** 적용되는 쿼리 단위 지시다.
+- `println` 관찰은 사람이 로그를 세야 회귀를 잡는다. `Statistics` 단언은 실패로 자동 감지한다.
+- Port 인터페이스에 새 쿼리 메서드를 추가할 땐 `default` 메서드로 — 추상 메서드는 대조군 구현체까지 컴파일을 깨뜨린다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `@Query`를 인터페이스 선언에 붙임 | 어떤 메서드에 적용되는지 불명확 — 메서드 위로 옮겨야 함 |
+| 인터페이스에 추상 메서드로 추가 | 대조군 구현체(`InMemoryReservationRepository` 등) 컴파일 에러 |
+| `default` 몸통을 `return findAll()`로 조용히 대체 | 나중에 대조군이 실수로 연결돼도 문제를 숨김 — `throw`로 fail fast 선택 |
+
+**[근거]** `NPlusOneTest.java:18,30-36,52-61,78-86` · `repository/SpringDataReservationRepository.java`
+
+---
+
+## P26. Inner Join Fetch vs Left Join Fetch — 목록 조회 설계
+
+**[언제]** 연관 엔티티가 없을 수 있는(nullable FK) 목록을 fetch join으로 조회해 서비스에 노출할 때.
+
+**[골격]**
+```java
+@Query("select r from Reservation r left join fetch r.member")
+List<Reservation> findAllWithMemberOrNull();
+
+@Transactional(readOnly = true)
+public List<ReservationSummary> findAllSummaries() {
+    return reservationRepository.findAllWithMemberOrNull().stream()
+            .map(r -> new ReservationSummary(r.getRoomName(), r.getRequesterName(),
+                    r.getMember() == null ? null : r.getMember().getName()))
+            .toList();
+}
+```
+
+**[판단]**
+- 기존 inner join fetch 메서드는 고치지 않고 **옆에 새 메서드**를 추가한다 — 그 메서드가 다른 테스트(N+1 대조군)의 의미를 이미 담당하고 있다면 의미를 바꾸지 않는다.
+- 값을 바꾸지 않는 조회는 `readOnly = true`로 표시한다.
+- Entity를 그대로 반환하지 않고 응답 전용 record로 감싼다 — 직렬화 시점(컨트롤러 밖)에 LAZY 필드 접근이 터질 수 있어서, 서비스 안에서 필요한 값만 미리 꺼낸다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| inner join fetch를 그대로 서비스에 노출 | `member_id`가 `null`인 예약(현재 HTTP 경로로 생성되는 예약 전부)이 목록에서 통째로 사라짐 |
+| Entity를 그대로 JSON 응답으로 반환 | LAZY 필드 직렬화 시점 예외 위험 |
+
+**[근거]** `repository/SpringDataReservationRepository.java:17-20` · `service/ReservationService.java:74-83` · `FetchJoinInnerVsLeftTest.java`
+
+---
+
+## Week C 요약 — 블랙박스를 여는 순서
+
+```
+1. 트랜잭션 경계    Service 메서드에 @Transactional, 커밋/롤백 원자성           (P22)
+2. 전파            REQUIRED(합류) vs REQUIRES_NEW(독립, 커넥션 2개 위험)        (P23)
+3. 연관관계+LAZY    @ManyToOne(LAZY)+@JoinColumn, 프록시 vs PersistentBag       (P24)
+4. N+1 확인        Statistics로 쿼리 수 실측, fetch join은 쿼리 단위 지시       (P25)
+5. 목록 설계 판단   nullable FK엔 left join fetch, readOnly + 응답 DTO         (P26)
+```
+
+---
+
+# Week D — 인증 + 테스트
+
+## P27. PasswordEncoder Bean과 회원가입 — 해싱 경계
+
+**[언제]** 원문으로 저장하면 안 되는 값(비밀번호)을 받아 저장해야 할 때. 필터체인 없이 해시 기능만 먼저 도입하고 싶을 때.
+
+**[골격]**
+```java
+@Configuration
+public class PasswordEncoderConfig {
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(); // strength 기본값 10
+    }
+}
+```
+
+```java
+@Transactional
+public Member signup(String loginId, String rawPassword, String name) {
+    if (memberRepository.existsByLoginId(loginId)) {
+        throw new DuplicateLoginIdException(loginId);
+    }
+    String hashedPassword = passwordEncoder.encode(rawPassword);
+    Member member = new Member(name, loginId, hashedPassword);
+    return memberRepository.save(member);
+}
+```
+
+**[판단]**
+- `spring-security-crypto`만 추가하면 필터체인(`spring-boot-starter-security`) 없이 해시 기능만 먼저 쓸 수 있다.
+- 로그인 계정 컬럼을 `NOT NULL`로 걸지 않고 nullable로 둔 이유는 기존 픽스처(`new Member(name)`)가 로그인 계정 없이 저장되는 경로를 이미 갖고 있어서다 — 기존 호환 우선.
+- 응답 DTO(`SignupResponse`)에 `password` 필드 자체를 두지 않아, 해시라도 실수로 노출할 구조적 여지를 없앤다.
+
+**[❌ 흔한 실수]** 이번 커밋에서는 실제 오류가 없었다 — 아래는 설계 시 주의할 점이지 이번에 터진 것은 아니다.
+
+| 주의할 점 | 이유 |
+|---|---|
+| `PasswordEncoder`를 Bean으로 등록하지 않고 매번 `new BCryptPasswordEncoder()` | 나중에 정책(strength 등)을 한 곳에서 바꾸기 어려움 |
+| 기존 픽스처를 무시하고 로그인 컬럼을 `NOT NULL`로 설계 | 회귀 테스트 전부가 컴파일이 아니라 저장 시점에 깨짐 |
+
+**[근거]** `config/PasswordEncoderConfig.java` · `service/AuthService.java:25-35` · `db/migration/V5__member_auth.sql` · `PasswordEncoderTest.java`(커밋 `be3a973`)
+
+---
+
+## P28. JwtProvider — HS256 발급·검증과 키 길이 요구사항
+
+**[언제]** 로그인 성공 결과를 stateless 토큰으로 클라이언트에 넘겨야 할 때.
+
+**[골격]**
+```java
+public JwtProvider(@Value("${jwt.secret}") String secret,
+                    @Value("${jwt.expiration}") long expirationMillis) {
+    this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); // 256비트 미만이면 여기서 예외
+    this.expirationMillis = expirationMillis;
+}
+
+public String issue(String subject) {
+    return Jwts.builder().subject(subject).issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expirationMillis))
+            .signWith(key).compact();
+}
+
+public String parseSubject(String token) {
+    return Jwts.parser().verifyWith(key).build()
+            .parseSignedClaims(token).getPayload().getSubject();
+}
+```
+
+**[판단]**
+- HS256은 대칭키라 서버 혼자만 secret을 알면 되지만, RFC 7518 3.2에 따라 키가 256비트(32바이트) 이상이어야 한다 — 짧으면 서명·검증 시점이 아니라 **생성자 시점**에 `WeakKeyException`이 난다.
+- 로그인 실패(아이디 없음 vs 비밀번호 오류)를 같은 401 + 같은 메시지로 합쳐 계정 열거(user enumeration)를 막는다 — REST의 "정확한 상태코드" 관습보다 보안이 우선하는 지점.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `jwt.secret`을 20바이트 내외 문자열로 짧게 설정 | `WeakKeyException: ... 160 bits which is not secure enough ...` — `JwtProvider` 생성 자체가 실패 (Day23) |
+| 로그인 실패를 404(아이디 없음)/401(비밀번호 오류)로 구분 응답 | 기능은 동작하지만 계정 열거 취약점을 만듦(교정하여 401로 통일) |
+
+**[근거]** `security/JwtProvider.java:20-48` · `service/AuthService.java`(login) · `JwtProviderTest.java`(커밋 `8832809`)
+
+---
+
+## P29. SecurityFilterChain과 필터/MVC 예외처리 경계
+
+**[언제]** REST API에 Spring Security를 도입해 필터 단계 인증/인가와 MVC 단계 예외처리의 경계를 나눠야 할 때.
+
+**[골격]**
+```java
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**", "/hello", "/health").permitAll()
+                .requestMatchers(HttpMethod.POST, "/reservations/cancel/**").hasRole("ADMIN")
+                .anyRequest().authenticated())
+        .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler))
+        .addFilterBefore(new JwtAuthenticationFilter(jwtProvider, memberRepository),
+                UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+}
+```
+
+**[판단]**
+- 경로 기반 인가 규칙(`hasRole`)은 `AuthorizationFilter`(필터체인 안, `DispatcherServlet` 이전)에서 걸려 Security 핸들러가 확실히 동작하지만, 서비스 코드에서 직접 던진 `AccessDeniedException`은 `DispatcherServlet` 안쪽이라 `@RestControllerAdvice`의 catch-all(500)에 먼저 잡힐 위험이 있다.
+- JWT는 stateless라 서버가 세션 쿠키를 발급/저장하지 않으므로, CSRF가 막는 "쿠키 자동 전송 위조" 전제 자체가 성립하지 않아 꺼도 된다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| Security 추가 후 기존 통합 테스트에 토큰을 안 붙임 | 전부 401로 깨지는 것을 "로직이 깨졌다"고 오인(day24.md) |
+
+**[근거]** `config/SecurityConfig.java:38-60` · `security/JwtAuthenticationFilter.java:34-54` · `ReservationControllerHttpTest.java:42-51`
+
+---
+
+## P30. JWT 검증 실패 — 하위타입 전부를 한 절로 포괄
+
+**[언제]** JWT 검증 실패의 여러 원인(위조/만료/헤더누락/형식오류)을 한 필터에서 처리할 때.
+
+**[골격]**
+```java
+try {
+    String loginId = jwtProvider.parseSubject(token);
+    memberRepository.findByLoginId(loginId).ifPresent(this::authenticate);
+} catch (JwtException e) {
+    // 위조(SignatureException)·만료(ExpiredJwtException)·형식오류(MalformedJwtException) 전부 하위타입
+    SecurityContextHolder.clearContext();
+}
+```
+
+**[판단]**
+- 401을 필터가 직접 만들지 않고 인증 없는 상태로 흘려보내면, 뒤의 `AuthorizationFilter`+`ExceptionTranslationFilter`가 일관되게 401을 생성 — 실패 원인별로 분기할 필요가 없다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `Thread.sleep` 기반 만료 테스트를 근거 없이 "항상 안정적"이라 단정 | 느린 CI에서는 flaky 가능성 있음(`Clock` 주입이 대안) |
+
+**[근거]** `security/JwtAuthenticationFilter.java:42-51` · `JwtAuthenticationFailureTest.java:19,52-75`
+
+---
+
+## P31. 테스트 슬라이스 분류와 Security 자동 설정 충돌 회피
+
+**[언제]** `@SpringBootTest`로 전체를 띄우기엔 무겁고, 특정 계층(Controller/Repository)만 검증하고 싶을 때. `spring-boot-starter-security`가 클래스패스에 있는 프로젝트에서 `@WebMvcTest`를 쓸 때.
+
+**[골격]**
+```java
+@WebMvcTest(ReservationController.class)
+@AutoConfigureMockMvc(addFilters = false) // Security 자동 설정과의 충돌 회피
+class ReservationControllerWebMvcTest {
+    @Autowired private MockMvc mockMvc;
+    @MockitoBean private ReservationService reservationService;
+}
+
+@DataJpaTest // Flyway 스키마 그대로, 각 테스트 트랜잭션 롤백
+class MemberRepositoryDataJpaTest {
+    @Autowired private MemberRepository memberRepository;
+}
+```
+
+**[판단]**
+- 분류 기준은 "실제 DB/Bean을 쓰는가"가 아니라 "컨텍스트가 얼마나 좁게 로드되는가"다. `@DataJpaTest`는 실제 DB를 쓰면서도 Slice다.
+- `@WebMvcTest`는 우리 `SecurityConfig`(일반 `@Configuration`)를 스캔하지 않는다 — 그런데 Security 스타터가 클래스패스에 있으면 Spring Boot가 더 엄격한 기본 보안을 대신 적용한다. "우리 설정 없음"과 "보안 없음"은 다른 말이다.
+- `addFilters=false`를 쓰면 그 슬라이스는 인증/인가 동작을 전혀 검증하지 못한다는 트레이드오프를 주석으로 남긴다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `@WebMvcTest`에 `addFilters=false` 없이 인증 필요 경로를 200으로 기대 | `Status expected:<200> but was:<401>` |
+| "Slice 컨텍스트에 설정 Bean이 없으니 안전할 것"이라고 가정 | 클래스패스 의존성만으로 더 엄격한 기본값이 대신 적용됨 |
+
+**[근거]** `ReservationControllerWebMvcTest.java` · `MemberRepositoryDataJpaTest.java`(커밋 `126880f`)
+
+---
+
+## P32. 오류 응답 필드 확장 — 기존 필드를 지우지 않고 추가
+
+**[언제]** 여러 컴포넌트(MVC 예외 처리기, Security 필터의 EntryPoint/Handler)가 각자 만드는 오류 응답의 모양을 나중에 통일해야 할 때.
+
+**[골격]**
+```java
+// @RestControllerAdvice 쪽 — Map 조립 + Jackson 직렬화
+Map<String, Object> body = new LinkedHashMap<>();
+body.put("error", ex.getMessage());   // 기존 필드는 그대로
+body.put("code", "UNAUTHORIZED");     // 신규
+body.put("timestamp", Instant.now().toString()); // 신규
+
+// 필터 단계 쪽 — 문자열 직접 조합(Jackson 안 거침)
+response.getWriter().write(
+    "{\"error\":\"...\",\"code\":\"FORBIDDEN\",\"timestamp\":\"" + Instant.now() + "\"}");
+```
+
+**[판단]**
+- 필드를 지우거나 이름을 바꾸지 않고 "추가"만 하면, 기존 `jsonPath("$.error")` 단언이 전부 그대로 유효하다 — 불필요하게 회귀를 만들지 않는다.
+- 응답을 만드는 주체(MVC 예외 처리기 vs 필터의 EntryPoint/Handler)를 하나로 합칠 필요는 없다. `ExceptionTranslationFilter` 앞뒤로 위치가 다르면 합칠 수도 없다 — "일관성"은 응답 **모양**의 통일이지 구현 통합이 아니다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것(또는 터질 뻔한 것) |
+|---|---|
+| 필드명을 바꾸거나 기존 필드를 제거 | 기존 `jsonPath` 단언 전부 깨짐(이번엔 필드만 추가해 회피) |
+| 필터 단계 응답까지 억지로 `@RestControllerAdvice`로 합치려 함 | `ExceptionTranslationFilter` 단계는 `DispatcherServlet` 바깥이라 애초에 안 닿음 |
+
+**[근거]** `exception/GlobalExceptionHandler.java:63-70` · `security/CustomAuthenticationEntryPoint.java` · `security/CustomAccessDeniedHandler.java`(커밋 `d38c973`)
+
+---
+
+## Week D 요약 — 인증·테스트를 여는 순서
+
+```
+1. 해싱 경계     PasswordEncoder Bean + encode()/매번 다른 salt              (P27)
+2. 토큰 발급/검증 JwtProvider(HS256), 256비트 미만이면 생성자에서 즉시 예외    (P28)
+3. 필터체인      SecurityFilterChain + JwtAuthenticationFilter, 필터 vs MVC  (P29)
+4. 실패 포괄     JwtException 하위타입 전부 한 catch, 401은 흘려보내 생성    (P30)
+5. 테스트 슬라이스 @WebMvcTest/@DataJpaTest, addFilters=false 트레이드오프    (P31)
+6. 응답 일관성   기존 필드 유지 + code·timestamp만 추가                     (P32)
+```
+
+---
+
+# Week E — 운영·디버깅·통합
+
+## P33. RequestIdFilter/MDC 요청 추적
+
+**[언제]** 요청 단위로 여러 로그 줄을 하나의 흐름으로 추적해야 할 때.
+
+**[골격]**
+```java
+public class RequestIdFilter extends OncePerRequestFilter {
+    protected void doFilterInternal(...) {
+        try {
+            MDC.put(MDC_KEY, requestId);
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove(MDC_KEY); // 스레드 재사용 대비 — 반드시 finally에서
+        }
+    }
+}
+
+// FilterRegistrationBean(Ordered.HIGHEST_PRECEDENCE)로 Security 필터체인보다 먼저 등록
+```
+
+**[판단]**
+- `SecurityConfig.addFilterBefore()`가 아니라 서블릿 컨테이너 최상단에 등록해야 인증 실패(401/403) 로그에도 requestId가 남는다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| `MDC.remove`를 `finally` 밖에 두거나 생략 | 스레드 재사용으로 다음 요청에 값이 새어나감 |
+
+**[근거]** `logging/RequestIdFilter.java:36-53` · `config/LoggingConfig.java:16-22`
+
+---
+
+## P34. Profile 분리 + fail-fast 비밀값 관리
+
+**[언제]** local/test/prod처럼 환경별로 다른 비밀값·접속정보가 필요할 때.
+
+**[골격]**
+```yaml
+# application.yml(공통) — logging.pattern 등 환경 무관 값
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] ... [%X{requestId}] ... %msg%n"
+```
+```yaml
+# application-prod.yml — 기본값 없이 ${VAR} 형태만
+spring:
+  datasource:
+    url: ${DB_URL}
+    password: ${DB_PASSWORD}
+```
+
+**[판단]**
+- prod 파일에 기본값을 안 둬서, 배포 환경에 값이 없으면 placeholder 미해결로 기동을 막는다(`Could not resolve placeholder`).
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| "yml에 설정했으니 어디서든 적용된다"고 가정 | 커스텀 `logging.pattern` 등은 `ApplicationContext` 기동(`LoggingApplicationListener`)이 있어야 반영됨 |
+
+**[근거]** `application-prod.yml:1-14` · `application.yml:27-29`
+
+---
+
+## P35. 가설-검증 디버깅 (재현 커밋/수정 커밋 분리)
+
+**[언제]** 버그를 고칠 때 원인을 코드 추측이 아니라 로그·테스트로 확정하고 싶을 때.
+
+**[골격]**
+```java
+private String sanitizeCancelReason(String cancelReason) {
+    String trimmed = cancelReason.trim();
+    log.debug("cancelReason raw='{}' sanitized='{}'", cancelReason, trimmed);
+    return trimmed; // 버그였던 substring(1) 재삭제를 제거 — trim() 결과를 그대로 씀
+}
+```
+실패하는 재현 테스트 먼저 커밋 → DEBUG 로그로 중간값 비교 → 원인 확정 → 별도 커밋으로 수정.
+
+**[판단]**
+- 서로 다른 두 테스트가 동일한 assertion 메시지로 실패하면 공통 원인의 증거로 삼을 수 있다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| 새 기능 추가 시 "이 기능이 관여하는 입력에만 영향이 국한된다"고 가정 | 실제 영향 범위는 그 코드 경로를 지나는 모든 호출 |
+
+**[근거]** `service/ReservationService.java:66-72`(커밋 `a9d9864`/`8a030ea`)
+
+---
+
+## P36. 멀티스테이지 Dockerfile + Compose healthcheck 의존
+
+**[언제]** 빌드 도구 없는 가벼운 이미지를 만들고 여러 컨테이너 시작 순서를 보장해야 할 때.
+
+**[골격]**
+```dockerfile
+FROM eclipse-temurin:17-jdk AS build   # 1단계 — JDK+빌드 도구
+RUN ./gradlew bootJar --no-daemon -x test
+FROM eclipse-temurin:17-jre            # 2단계 — JRE+산출물만
+COPY --from=build /workspace/build/libs/*.jar app.jar
+```
+```yaml
+depends_on:
+  mysql:
+    condition: service_healthy   # "떴다"가 아니라 "요청 받을 준비"까지 대기
+```
+
+**[판단]**
+- `depends_on`만으로는 "컨테이너 시작"까지만 보장 — `service_healthy`로 "요청 처리 준비 완료"까지 확인해야 경쟁 상태를 막는다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| 컨테이너 밖 localhost를 compose 네트워크 안에서도 그대로 사용 | 서비스 이름(`mysql`)으로 접속해야 함 |
+
+**[근거]** `Dockerfile:9-24`(`app/Dockerfile`) · `compose.yaml:15-21,34-36`(저장소 루트)
+
+---
+
+## P37. CI Job 의존과 실제 실행 검증
+
+**[언제]** 정적 검증(로컬 테스트)만으로 부족하고 실제 배포 환경에서만 드러나는 오류를 잡고 싶을 때.
+
+**[골격]**
+```yaml
+docker:
+  needs: test   # test 잡 통과 후에만 실행
+  steps:
+    - run: docker build -t study-room-api:ci ./app
+    - run: docker compose up -d --wait
+    - run: curl --fail --silent http://localhost:8080/health   # 재시도 루프
+```
+
+**[판단]**
+- 로컬 H2 호환 모드 테스트 통과가 실제 DB 파서 차이(SQL 주석 뒤 공백 요구 등)를 보장하지 않는다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| "테스트가 계속 초록이었다"를 "실제 환경에서도 동작한다"와 동일시 | 1차 run에서 MySQL Error 1064(파서 차이)로 실패 |
+
+**[근거]** `../.github/workflows/ci.yml:51-88`(저장소 루트) · `db/migration/V1__init.sql:7`(커밋 `4b58652`)
+
+---
+
+## P38. 구간 겹침 검사 — 3중 구현체 동기화
+
+**[언제]** 새 도메인 규칙이 "저장 전 기존 데이터와의 관계"를 검사해야 하고, Unit(DB 없음)과 Integration(DB 있음) 양쪽에서 확인해야 할 때.
+
+**[골격]**
+```java
+// JPA 구현체
+@Query("select r from Reservation r where r.roomName = :roomName and r.confirmed = true " +
+        "and r.startAt is not null and r.endAt is not null " +
+        "and r.startAt < :endAt and :startAt < r.endAt")
+List<Reservation> findOverlapping(String roomName, LocalDateTime startAt, LocalDateTime endAt);
+
+// InMemory 구현체 — 같은 판정을 순수 자바로 재현
+boolean overlaps = hasTimeSlot && r.getStartAt().isBefore(endAt) && startAt.isBefore(r.getEndAt());
+```
+
+**[판단]** 겹침 판정은 반드시 **엄격 부등호**(`<`, 등호 없음)로 쓴다 — 등호를 쓰면 맞닿는 경계(예: 10~11시/11~12시)까지 겹침으로 오판한다. 취소된 행(`confirmed = false`)은 판정 이전에 제외한다.
+
+**[❌ 흔한 실수]**
+
+| 실수 | 실제로 터진 것 |
+|---|---|
+| 새 필드를 `@NotNull`로 걸어 기존 호출부·테스트를 깨뜨림 | 하위 호환이 필요하면 필드를 선택으로 두고 "둘 다 있을 때만" 검사하는 가드를 서비스 계층에 둔다 |
+
+**[근거]** `repository/SpringDataReservationRepository.java:26-32` · `repository/InMemoryReservationRepository.java:56-70` · `ReservationOverlapTest.java`(`reserveAllowsTouchingIntervalsInSameRoom`)
+
+---
+
+## Week E 요약 — 운영·디버깅을 여는 순서
+
+```
+1. 요청 추적    RequestIdFilter+MDC, Security 필터체인보다 먼저 등록          (P33)
+2. 설정 분리    application-{profile}.yml, prod는 기본값 없이 fail-fast      (P34)
+3. 디버깅 절차  재현 테스트 커밋 → DEBUG 로그 비교 → 원인 확정 → 수정 커밋   (P35)
+4. 컨테이너화   멀티스테이지 Dockerfile + compose depends_on(service_healthy) (P36)
+5. CI 검증      needs로 순차 Job, 실제 이미지 빌드+헬스체크까지 확인         (P37)
+6. 겹침 검사    JPA·InMemory 양쪽에 동일 부등호 규칙 동기화                  (P38)
+```

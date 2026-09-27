@@ -6,17 +6,17 @@
 
 ## 현재 진행 상황
 
-현재 코드와 학습 기록으로 검증된 범위는 **Week B Day 10 — Entity 매핑과 Spring Data JPA 기본 CRUD**까지입니다. 다음 학습은 **Day 11 — 영속성 컨텍스트·1차 캐시·동일성**입니다.
+**5주 트랙(Week A~E, Day01~Day35)이 전 구간 완료됐습니다(2026-10-21).** 다음 단계는 새 Day 진행이 아니라 **종료 후 복습(주 2회 20분)**이며, 졸업 루브릭 12개 중 10개는 통과, 2개(JWT stateless·로그아웃 한계 / Unit·Slice·Integration 구분)는 재시험 통과 후 +7 재확인 전이라 보완 상태로 남아 있습니다.
 
 | 단계 | 학습 주제 | 구현·학습 증거 | 상태 |
 |---|---|---|---|
 | Week A · Day 1~7 | HTTP, DTO·Domain, 검증·오류, 계층 분리, IoC·DI | [Week A 기록](app/study_docs/days/WeekA/) · [주차 마무리 글](app/study_docs/velog/week-a-identity-storage-error-boundary.md) | 완료 |
-| Day 8 | Flyway 스키마 버전 관리 | [기술 글](app/study_docs/days/WeekB/Day08_0801/velog_post.md) · [실험 기록](app/study_docs/days/WeekB/Day08_0801/explain-log.md) | 완료 |
-| Day 9 | JDBC 직접 구현과 저장 계약 | [기술 글](app/study_docs/days/WeekB/Day09_0802/velog_post.md) · [실험 기록](app/study_docs/days/WeekB/Day09_0802/explain-log.md) | 완료 |
-| Day 10 | Entity 매핑과 Spring Data JPA CRUD | [기술 글](app/study_docs/days/WeekB/Day10_0807/velog_post.md) · [검증 기록](app/study_docs/days/WeekB/Day10_0807/progress.md) | 완료 |
-| Day 11 | 영속성 컨텍스트·1차 캐시·동일성 | [5주 로드맵](app/study_docs/FUNDAMENTALS_ROADMAP.md) | 다음 학습 |
+| Week B · Day 8~14 | Flyway, JDBC, JPA, 영속성 컨텍스트, 변경 감지 | [Week B 기록](app/study_docs/days/WeekB/) · [주차 마무리 글](app/study_docs/velog/week-b-persistence-context-and-dirty-checking.md) | 완료 |
+| Week C · Day 15~21 | 트랜잭션 경계·전파, Spring AOP 프록시, Hibernate LAZY, N+1/fetch join | [Week C 기록](app/study_docs/days/WeekC/) · [주차 마무리 글](app/study_docs/velog/week-c-transaction-proxy-and-fetch-strategy.md) | 완료 |
+| Week D · Day 22~28 | BCrypt, JWT, SecurityFilterChain, 테스트 슬라이스, 오류 응답 일관성 | [Week D 기록](app/study_docs/days/WeekD/) · [주차 마무리 글](app/study_docs/velog/week-d-authentication-and-test-strategy.md) | 완료 |
+| Week E · Day 29~35 | 로깅·설정관리, 디버깅, Docker/Compose, CI, 누적 독립과제, 최종 시험·졸업판정 | [Week E 기록](app/study_docs/days/WeekE/) · [주차 마무리 글](app/study_docs/velog/week-e-operations-and-graduation.md) | 완료 |
 
-Day 10까지 `ReservationRepository` 경계는 유지하면서 저장 구현을 InMemory → JDBC → Spring Data JPA 어댑터로 교체했습니다. Flyway가 스키마를 관리하고 Hibernate는 Entity 매핑을 통해 CRUD SQL을 실행합니다. JPA 통합 테스트는 신규 저장·조회와 기존 ID 갱신·중복 방지를 검증합니다.
+`ReservationRepository` 경계는 유지하면서 저장 구현을 InMemory → JDBC → Spring Data JPA 어댑터로 교체했고, 이후 트랜잭션·인증·테스트·운영 계층을 차례로 쌓았습니다. Flyway가 스키마를, Hibernate가 Entity 매핑을 통한 CRUD SQL을, Spring Security+JWT가 인증을 담당합니다. 상세 완료 근거는 [5주 로드맵](app/study_docs/FUNDAMENTALS_ROADMAP.md)에 있습니다.
 
 ## 학습 방식
 
@@ -36,7 +36,7 @@ Day 10까지 `ReservationRepository` 경계는 유지하면서 저장 구현을 
 - `explain-log.md`: 예측, 실행 결과, 예상과 달랐던 이유
 - `velog_post.md`: 먼저 핵심 이론을 독립적으로 복습할 수 있게 설명하고, 이어서 설계 판단·검증·실수·한계를 정리한 기술 회고. 모든 글은 [기술 블로그 템플릿](app/study_docs/VELOg_POST_TEMPLATE.md)의 사실 검증 및 품질 기준을 따른다
 
-코드 작성 형태를 복습할 때는 [패턴 드릴](app/study_docs/PATTERN_DRILLS.md)을 먼저 풀고, 막히거나 틀린 뒤에 [코드 패턴 참조서](app/study_docs/CODE_PATTERNS.md)와 실제 소스를 대조합니다. 현재 두 파일에는 Day 10까지 P1~P17과 D1~D17이 기록되어 있으며, 여러 계층의 관계와 실행 순서는 UML 스타일 Mermaid 도식으로 확인할 수 있습니다.
+코드 작성 형태를 복습할 때는 [패턴 드릴](app/study_docs/PATTERN_DRILLS.md)을 먼저 풀고, 막히거나 틀린 뒤에 [코드 패턴 참조서](app/study_docs/CODE_PATTERNS.md)와 실제 소스를 대조합니다. 현재 두 파일에는 Week A~E 전체 범위인 P1~P38과 D1~D38이 기록되어 있으며, 여러 계층의 관계와 실행 순서는 UML 스타일 Mermaid 도식으로 확인할 수 있습니다.
 
 ## 현재 코드에서 확인할 수 있는 것
 
@@ -46,9 +46,11 @@ Day 10까지 `ReservationRepository` 경계는 유지하면서 저장 구현을 
 - `JpaReservationRepository`: 기존 저장소 계약을 Spring Data JPA에 연결하는 어댑터
 - `SpringDataReservationRepository`: 런타임 Repository 구현 생성
 - `ReservationRequest`: `record` DTO와 Bean Validation
-- `GlobalExceptionHandler`: 검증 오류의 공통 응답 처리
+- `GlobalExceptionHandler`: 검증 오류·인증 오류 공통 응답 처리(`code`·`timestamp` 필드 포함)
+- `SecurityConfig`·`JwtAuthenticationFilter`·`JwtProvider`: SecurityFilterChain과 JWT 발급·검증
+- `RequestIdFilter`: MDC 기반 요청 상관관계 추적(`X-Request-Id`)
 
-현재는 Spring Web·Validation·JDBC·Flyway·Spring Data JPA·H2를 사용합니다. Spring Security와 JWT는 Week D에서 추가합니다. 최종 기술 목록을 미리 넣어 완성된 것처럼 보이지 않도록 **현재 구현과 계획을 구분**했습니다.
+Spring Web·Validation·JDBC·Flyway·Spring Data JPA·H2에 더해 Spring Security(JWT)·로깅(MDC)까지 5주 트랙 전 범위가 구현돼 있습니다. Docker(멀티스테이지 `Dockerfile` + `compose.yaml`)와 GitHub Actions CI(테스트+이미지 빌드+헬스체크)로 배포 가능한 상태까지 확인했습니다.
 
 ## 학습 로드맵
 
@@ -92,5 +94,7 @@ cd app
 ./gradlew test
 ./gradlew bootRun
 ```
+
+컨테이너로 띄우려면 저장소 루트에서 `docker compose up -d --wait` 실행 후 `curl http://localhost:8080/health`로 확인합니다(`Dockerfile`은 멀티스테이지, `compose.yaml`은 app+MySQL 구성). GitHub Actions(`.github/workflows/ci.yml`)가 push·PR마다 테스트와 Docker 이미지 빌드·헬스체크를 자동 실행합니다.
 
 학습일이 끝나면 코드, 퀴즈, 설명 로그와 복습큐를 함께 커밋해 구현 결과와 이해 과정을 같은 시점의 기록으로 남깁니다.

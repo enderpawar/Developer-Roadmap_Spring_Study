@@ -1,24 +1,18 @@
 # 학습 세션 재개 상태
 
-최종 갱신: 2026-09-20
+최종 갱신: 2026-10-21
 
 ## 세션 목적
 
-- 한 달 휴지기 후 Week C에 들어가기 전에 Week A·B를 처음부터 다시 복습한다.
-- 기억하고 있다고 가정하지 않고 `개념 설명 → 현재 코드의 완성 예제 → 작은 확인 문제 → 즉시 교정` 순서로 진행한다.
-- 실제 오답과 교정 결과는 `app/study_docs/reviews/2026-09-19-week-ab-refresh.md`에 누적한다.
+**5주 트랙(Week A~E)이 전 구간 완료됐다.** 이 문서의 아래 절들은 재복습~Week C 진입 시점의 세션 기록으로 이력 보존한다. 다음 세션의 목적은 새 Day 진행이 아니라 **종료 후 복습(주 2회 20분)**이다 — `app/study_docs/복습큐.md`의 도래분과, 졸업 루브릭 보완 2건(JWT stateless·로그아웃 한계 / Unit·Slice·Integration 구분)의 +7 재확인을 우선 처리한다.
 
 ## 현재 위치
 
-- Week A D1~D5 재복습: 완료
-- Week A 마무리 연결 문제: 통과
-- Week B D1~D5·D7 필수 개념 재복습: 완료
-- Week B D6 누적시험: 기존 공식 완료 기록 유지
-- Week C D1 트랜잭션 경계·커밋·롤백: 완료
-- Week C D2 Spring AOP 프록시·self-invocation: 완료
-- Week C D3 트랜잭션 전파: 다음 시작점
+- Week A~E D1~D7 전 구간: 완료 (공식 기록: `app/study_docs/FUNDAMENTALS_ROADMAP.md`)
+- 졸업 루브릭(§5) 자가평가: 12개 중 10개 통과, 2개 보완(Day35, [Day35 기록](app/study_docs/days/WeekE/Day35_1021/))
+- 다음 시작점: 종료 후 복습 — 새 Day 없음
 
-이 기록은 재복습 이후 Week C 학습까지 이어지는 세션 상태이며, `app/study_docs/FUNDAMENTALS_ROADMAP.md`의 공식 완료 체크 상태와 동기화한다.
+이하는 재복습 이후 Week C 진입까지의 세션 상태이며, `app/study_docs/FUNDAMENTALS_ROADMAP.md`의 공식 완료 체크 상태와 동기화한다.
 
 ## 오늘 다시 연결한 내용
 
@@ -86,9 +80,9 @@
 
 ## 다음 기기에서 시작할 지점
 
-Week C D3 트랜잭션 전파에서 시작한다. 기본 `REQUIRED`가 기존 트랜잭션에 참여하는 흐름과 `REQUIRES_NEW`가 별도 트랜잭션·커넥션을 요구하는 차이를 예측→실행한다.
+(이력) 이 시점에는 Week C D3 트랜잭션 전파가 다음 시작점이었다. **현재는 Week C D3 이후 Week C~E 전 구간이 완료돼(2026-10-21) 새 시작점이 없다.** 다음 세션은 종료 후 복습(주 2회 20분)이다.
 
-## 검증 상태
+## 검증 상태(이 세션 시점 — Week C D2까지)
 
 - `ReservationService.cancel()`에 `@Transactional`을 적용하고 명시적 `save()`를 제거했다.
 - `ReservationServiceTransactionTest`에서 commit·rollback 통합 테스트를 추가했다.

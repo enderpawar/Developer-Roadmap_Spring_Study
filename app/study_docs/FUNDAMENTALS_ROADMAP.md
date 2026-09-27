@@ -54,7 +54,7 @@
 >
 > `[x]`는 코드·테스트와 해당 Day 산출물(`vocab.md`, `quiz.md`, `explain-log.md`, 필요 시 `progress.md`)로 완료가 확인된 경우에만 표시한다. 시작했거나 설명만 들은 항목은 완료로 표시하지 않는다. 세션 종료 시 체크 상태와 **다음 시작점**을 함께 갱신한다.
 
-**현재 확인 시점: 2026-09-26 — Week C D5(N+1 확인 + fetch join, Day19)는 Full 루프 ①완성예제·⑤예측→실행→차이설명까지 완료, ②빈칸예제·③독립 변형·④인출(노트 덮고 재작성)·⑥복습큐 등록(신규 일부만)은 미완료.** **다음 세션은 Day19 이어서(빈칸예제부터) 재개** — D5를 아직 `[x]`로 표시하지 않는다. D4도 여전히 미완료 상태로 [기술부채.md](기술부채.md)에 이월돼 있다(해결 슬롯: Week C D7). 상세는 [Day19 진행 기록](days/WeekC/Day19_0926/progress.md), [Day18 진행 기록](days/WeekC/Day18_0925/progress.md).
+**현재 확인 시점: 2026-10-21 — 5주 트랙 종료.** Week A~E D1~D7 전 구간이 코드·테스트와 Day 산출물로 완료 확인됐다. 졸업 루브릭(§5) 자가평가는 12개 중 10개 통과, 2개는 보완 표시로 남아 있다(JWT stateless·로그아웃 무효화 한계 / Unit·Slice·Integration 구분 — 둘 다 Day35 재시험에서 힌트 없이 통과했으나 +7 재확인 전이라 보완으로 유지한다). **다음 세션은 새 Day 진행이 아니라 종료 후 복습(주 2회 20분, §2 간격반복 엔진 참고)이다** — [복습큐.md](복습큐.md)에 남은 도래분과 위 보완 2건의 +7 재확인을 우선 처리한다. 상세는 [Day35 기록](days/WeekE/Day35_1021/).
 > **Week C D3 완료 근거(2026-09-25)**: `TransactionPropagationTest`에서 ① `REQUIRED`(기본값): `PropagationOuterService.reserveThenFail()`이 예외를 던지면 `PropagationInnerService.reserve()`가 저장한 예약도 같은 트랜잭션에 합류해 함께 롤백됨을 확인, ② `REQUIRES_NEW`로 전환 후 같은 실패 상황에서도 예약이 독립 트랜잭션으로 이미 커밋되어 살아남음을 확인했다. 전체 테스트 23개가 통과했다. 전체 스위트 실행 중 `findAll().isEmpty()`가 다른 테스트의 커밋 데이터 때문에 실패하는 테스트 격리 문제를 발견해 `stream().noneMatch/anyMatch`로 특정 레코드만 검증하도록 교정했다. 상세는 [Day17 기록](days/WeekC/Day17_0925/).
 > **Week C D2 완료 근거(2026-09-20)**: `ReservationService` Bean이 `ReservationService$$SpringCGLIB$$0` 타입의 AOP 프록시임을 `AopUtils`로 확인했다. 테스트용 `SelfInvocationService`에서 외부 `inner()` 호출은 트랜잭션 활성 `true`, 비트랜잭션 `outer()`의 내부 호출은 `false`, `@Transactional transactionalOuter()`의 내부 호출은 바깥 경계의 효과로 `true`임을 검증했다. 전체 테스트 22개가 통과했다. 상세는 [Day16 기록](days/WeekC/Day16_0920/).
 > **Week C D1 완료 근거(2026-09-20)**: `ReservationService.cancel()` 전체에 `@Transactional`을 적용하고 명시적 `save()`를 제거했다. `ReservationServiceTransactionTest`에서 ① 정상 반환 시 변경 감지 `UPDATE`와 commit 후 취소 상태 유지, ② 명시적 `flush()`로 `UPDATE`를 실행한 뒤 `RuntimeException`으로 rollback되어 기존 `confirmed=true`, `cancelReason=null`이 유지되는 것을 H2 통합 테스트로 확인했다. 전체 테스트 18개가 통과했다. 상세는 [Day15 기록](days/WeekC/Day15_0920/).
@@ -100,30 +100,54 @@ Week B 전체와 Week C D1~D3 완료. 다음은 Week C D4 — 연관관계 + Hib
 - [x] D1 트랜잭션 경계 / 커밋·롤백 — 2026-09-20 완료 ([Day15 기록](days/WeekC/Day15_0920/))
 - [x] D2 Spring AOP 프록시 / self-invocation 관찰 — 2026-09-20 완료 ([Day16 기록](days/WeekC/Day16_0920/))
 - [x] D3 트랜잭션 전파 — 2026-09-25 완료 ([Day17 기록](days/WeekC/Day17_0925/))
-- [ ] D4 연관관계 + Hibernate LAZY 프록시
-- [ ] D5 N+1 확인 + fetch join
-- [ ] D6 누적시험 A+B+C
-- [ ] D7 버퍼
+> **Week C D4 완료 근거(2026-09-27)**: `Member.reservations`에 `@OneToMany(mappedBy="member", fetch=LAZY)`를 채우고, `MemberLazyProxyTest.memberReservationsCollectionIsLazyPersistentBag()`으로 컬렉션 방향 LAZY 초기화(`PersistentBag`, `Hibernate.isInitialized()`)를 확인했다. 커밋 `7a9626d`, 27/27 통과.
+> **Week C D5 완료 근거(2026-09-27)**: `NPlusOneTest`의 `println` 관찰을 `Statistics.getPrepareStatementCount()` 단언으로 교체(N+1=4, fetch join=1, 기존 실측치와 일치). 커밋 `7a9626d`, 27/27 통과.
+> **Week C D6 완료 근거(2026-09-28)**: Week A~C 10문항 인출, self-invocation·AOP프록시 vs Hibernate프록시·fetch join 적용범위 3건 오답 교정. 상세는 [Day20 기록](days/WeekC/Day20_0928/).
+> **Week C D7 완료 근거(2026-09-29)**: `FetchJoinInnerVsLeftTest`로 inner join fetch의 member-null 누락을 실증하고 `findAllWithMemberOrNull()`(left join fetch)을 추가, `ReservationService.findAllSummaries()`(`readOnly=true`) + `GET /reservations` 독립과제 완료. 커밋 `094c6b3`, 30/30 통과.
+- [x] D4 연관관계 + Hibernate LAZY 프록시 — 2026-09-27 완료(이월분 포함) ([Day18 기록](days/WeekC/Day18_0925/))
+- [x] D5 N+1 확인 + fetch join — 2026-09-27 완료(이월분 포함) ([Day19 기록](days/WeekC/Day19_0926/))
+- [x] D6 누적시험 A+B+C — 2026-09-28 완료, 10문항 중 7개 통과(6개 힌트없이, 1개 힌트후), 3개 오답 교정 ([Day20 기록](days/WeekC/Day20_0928/))
+- [x] D7 버퍼 — 2026-09-29 완료: inner/left join fetch 대조 + `GET /reservations`(readOnly) 독립과제 ([Day21 기록](days/WeekC/Day21_0929/)). **패턴 승격 완료** — `CODE_PATTERNS.md`에 P22~P26 append, `PATTERN_DRILLS.md`에 묶음8(D22~D26, Loan 도메인) 추가.
+
+Week C 통합 Velog — [[Spring Study Day 20 & Day 21] 3주차 마무리 시험](velog/week-c-transaction-proxy-and-fetch-strategy.md)
 
 #### Week D — 인증 + 테스트
 
-- [ ] D1 BCrypt 비밀번호 저장
-- [ ] D2 JWT 발급·검증
-- [ ] D3 Security Filter Chain·SecurityContext
-- [ ] D4 인증 실패 케이스 테스트
-- [ ] D5 테스트 분류 + H2 통합 테스트
-- [ ] D6 누적시험 A~D
-- [ ] D7 버퍼
+> **Week D D1 완료 근거(2026-10-01)**: `Member`에 `loginId`/`password`를 nullable 컬럼으로 추가하고, `BCryptPasswordEncoder`를 `PasswordEncoder` Bean으로 등록해 `POST /auth/signup`이 원문 대신 해시를 저장하게 했다. `PasswordEncoderTest`로 동일 원문의 해시가 매번 다르다는 것과 `$2a$10$` 접두어를 확인했고, `AuthControllerHttpTest`로 성공/중복 409/짧은 비밀번호 400을 확인했다. 전체 테스트 36개가 통과했다. 상세는 [Day22 기록](days/WeekD/Day22_1001/).
+> **Week D D2 완료 근거(2026-10-02)**: `JwtProvider`가 HS256으로 토큰을 발급(`issue`)·검증(`parseSubject`)하고, `POST /auth/login`이 아이디·비밀번호 확인 후 토큰을 내려주게 했다. 서명 키를 160비트로 짧게 잡아 `WeakKeyException`을 실제로 재현했고 RFC 7518 기준 256비트 이상으로 교정했다. 아이디 없음/비밀번호 오류를 같은 401 응답으로 합쳐 계정 열거를 방지했다. 전체 테스트 41개가 통과했다. 상세는 [Day23 기록](days/WeekD/Day23_1002/).
+> **Week D D3 완료 근거(2026-10-04)**: `SecurityFilterChain`+`JwtAuthenticationFilter`+커스텀 401/403 핸들러를 도입했다. 커밋 `a617422`, `ReservationControllerHttpTest` 43/43 통과(기존 5개 401 회귀 수정 + 신규 2개). 상세는 [Day24 기록](days/WeekD/Day24_1004/).
+> **Week D D4 완료 근거(2026-10-05)**: `JwtAuthenticationFailureTest`로 위조·만료·헤더누락·형식오류 4가지 인증 실패 케이스를 모두 401로 확인하고, CSRF/CORS/로그아웃 한계를 정리했다. 커밋 `f765bbf`, 47/47 통과. 상세는 [Day25 기록](days/WeekD/Day25_1005/).
+> **Week D D5 완료 근거(2026-10-07)**: 기존 17개 테스트 클래스(51개 테스트)를 Unit(4)/Slice(2, 신규)/Integration(11)으로 분류하고 `ReservationControllerWebMvcTest`(`@WebMvcTest`)·`MemberRepositoryDataJpaTest`(`@DataJpaTest`)를 추가했다. `addFilters=false` 없이 돌렸을 때 Spring Boot 기본 보안 자동 설정으로 401이 나는 걸 직접 재현하고 수정했다. 커밋 `126880f`, 51/51 통과.
+> **Week D D6 완료 근거(2026-10-09)**: Week A~D 8문항 인출, self-invocation은 Day22 이후 안정 유지, HS256 키 최소 길이와 401/403을 만드는 주체(`AuthenticationEntryPoint`/`AccessDeniedHandler`) 2건 오답 교정. 상세는 [Day27 기록](days/WeekD/Day27_1009/).
+> **Week D D7 완료 근거(2026-10-10)**: D6 문항 7 교정 기준을 적용해 `GlobalExceptionHandler`·`CustomAuthenticationEntryPoint`·`CustomAccessDeniedHandler`의 401/403 응답에 `code`·`timestamp` 필드를 통일 추가(기존 `error` 필드는 유지). 커밋 `d38c973`, 51/51 통과.
+- [x] D1 BCrypt 비밀번호 저장 — 2026-10-01 완료 ([Day22 기록](days/WeekD/Day22_1001/))
+- [x] D2 JWT 발급·검증 — 2026-10-02 완료 ([Day23 기록](days/WeekD/Day23_1002/))
+- [x] D3 Security Filter Chain·SecurityContext — 2026-10-04 완료 ([Day24 기록](days/WeekD/Day24_1004/))
+- [x] D4 인증 실패 케이스 테스트 — 2026-10-05 완료 ([Day25 기록](days/WeekD/Day25_1005/))
+- [x] D5 테스트 분류 + H2 통합 테스트 — 2026-10-07 완료 ([Day26 기록](days/WeekD/Day26_1007/))
+- [x] D6 누적시험 A~D — 2026-10-09 완료, 8문항 중 6개 힌트없이+1개 힌트후 통과, 2개 오답 교정 ([Day27 기록](days/WeekD/Day27_1009/))
+- [x] D7 버퍼 — 2026-10-10 완료: 401/403 응답 code·timestamp 필드 통일 ([Day28 기록](days/WeekD/Day28_1010/)). **패턴 승격 완료** — `CODE_PATTERNS.md`에 P27~P32 append, `PATTERN_DRILLS.md`에 묶음9(D27~D32, Loan 도메인) 추가.
+
+Week D 통합 Velog — [[Spring Study Day 27 & Day 28] 4주차 마무리 시험](velog/week-d-authentication-and-test-strategy.md)
 
 #### Week E — 운영·디버깅·통합
 
-- [ ] D1 로깅 + 설정관리
-- [ ] D2 디버깅 실습
-- [ ] D3 Docker / Compose
-- [ ] D4 GitHub Actions CI
-- [ ] D5 누적 독립과제
-- [ ] D6 최종 인출 시험
-- [ ] D7 버퍼 / 졸업판정
+> **Week E D1 완료 근거(2026-10-12)**: `RequestIdFilter`(MDC 상관관계 추적)와 profile 분리(local/test/prod) + fail-fast 비밀값 관리를 도입했다. 커밋 `21fd3d5`, `./gradlew test` 60/60, `RequestIdFilterTest`·`RequestIdHttpTest` 9종 신규. 상세는 [Day29 기록](days/WeekE/Day29_1012/).
+> **Week E D2 완료 근거(2026-10-13)**: 취소 사유 트리밍 버그를 재현 테스트로 먼저 확정한 뒤 DEBUG 로그로 원인을 좁혀 수정했다. 커밋 `a9d9864`(재현, BUILD FAILED 59/61) → `8a030ea`(수정, BUILD SUCCESSFUL 61/61). 상세는 [Day30 기록](days/WeekE/Day30_1013/).
+> **Week E D3 완료 근거(2026-10-15)**: 멀티스테이지 `Dockerfile`과 `compose.yaml`(app+MySQL, healthcheck)을 작성했다. 커밋 `bb5a462`, `./gradlew test` 61/61(로컬 Docker 미설치로 실행 자체는 미검증, Day32로 이월). 상세는 [Day31 기록](days/WeekE/Day31_1015/).
+> **Week E D4 완료 근거(2026-10-16)**: GitHub Actions에 `docker` 잡을 추가해 실제 이미지 빌드·컨테이너 기동을 검증했다. 커밋 `9f088d7`+`4b58652`, run `36251196912` test✓/docker✓(1차 run `36250928356`은 MySQL Error 1064로 실패 후 수정). 상세는 [Day32 기록](days/WeekE/Day32_1016/).
+> **Week E D5 완료 근거(2026-10-18)**: 예약 시간대 중복 방지(`start < otherEnd && otherStart < end`, 맞닿는 구간 허용)를 마이그레이션(V7)·엔티티·DTO·서비스·예외·리포지토리 3종·테스트 전 계층에 걸쳐 추가했다. 신규 10개 포함 `./gradlew test` 71/71 통과. 커밋 `11763ea`. 상세는 [Day33 기록](days/WeekE/Day33_1018/).
+> **Week E D6 완료 근거(2026-10-20)**: Week A~E 14문항 인출, 힌트 없이 통과 11개·오답 3개(JWT stateless, 테스트 슬라이스 범위, Docker 멀티스테이지). 상세는 [Day34 기록](days/WeekE/Day34_1020/).
+> **Week E D7 완료 근거(2026-10-21)**: 오답 2개 재시험 힌트 없이 통과, 졸업 루브릭(§5) 12개 중 10개 통과·2개 보완으로 자가평가. 상세는 [Day35 기록](days/WeekE/Day35_1021/).
+- [x] D1 로깅 + 설정관리 — 2026-10-12 완료 ([Day29 기록](days/WeekE/Day29_1012/))
+- [x] D2 디버깅 실습 — 2026-10-13 완료: 취소 사유 트리밍 버그 재현·수정 ([Day30 기록](days/WeekE/Day30_1013/))
+- [x] D3 Docker / Compose — 2026-10-15 완료 ([Day31 기록](days/WeekE/Day31_1015/))
+- [x] D4 GitHub Actions CI — 2026-10-16 완료 ([Day32 기록](days/WeekE/Day32_1016/))
+- [x] D5 누적 독립과제 — 2026-10-18 완료: 예약 시간대 중복 방지 ([Day33 기록](days/WeekE/Day33_1018/))
+- [x] D6 최종 인출 시험 — 2026-10-20 완료, 14문항 중 11개 힌트없이 통과·3개 오답 교정 ([Day34 기록](days/WeekE/Day34_1020/))
+- [x] D7 버퍼 / 졸업판정 — 2026-10-21 완료: 오답 2개 재시험 통과, 졸업 루브릭 12개 중 10개 통과·2개 보완 ([Day35 기록](days/WeekE/Day35_1021/)). **패턴 승격 완료** — `CODE_PATTERNS.md`에 P33~P38 append, `PATTERN_DRILLS.md`에 묶음10(D33~D38, Loan 도메인) 추가.
+
+Week E 통합 Velog — [[Spring Study Day 34 & Day 35] 5주차 마무리 시험](velog/week-e-operations-and-graduation.md)
 
 ### 사전 (7/25 D1에 포함) — 새 시작점 확인
 이 저장소는 **빈 최소 스켈레톤**에서 시작했다(Spring Boot 3.5.3 · Java 17 · web+validation, 롬복 없음). 저장소 루트에서 `./gradlew test`가 green인지 확인했다. 과거 완성 코드는 이 갱신 저장소에 포함하지 않는다. 현재 코드와 Day 기록을 근거로 직접 학습한다.
@@ -191,18 +215,18 @@ Week B 전체와 Week C D1~D3 완료. 다음은 Week C D4 — 연관관계 + Hib
 
 ## 5. 졸업 루브릭 (8/27~28 + 종료 후 복습, 코드 없이 말로)
 
-- [ ] 요청 하나가 계층을 어떻게 흐르는가 / HTTP 메서드·상태코드 계약
-- [ ] DTO를 왜 분리하나 / Validation·전역 오류 처리 흐름
-- [ ] DI를 쓰는 이유 3가지 / 생성자 주입 / 싱글톤 무상태
-- [ ] **순수 JDBC 대비 JPA가 무엇을 추상화하나** (커넥션풀을 없애는 게 아니라 직접 관리·매핑을 추상화)
-- [ ] 영속성 컨텍스트가 `save()` 없이 UPDATE 하는 원리
-- [ ] `@Transactional`이 Spring AOP 프록시로 도는 의미 / self-invocation 한계
-- [ ] **트랜잭션 전파(`REQUIRED`/`REQUIRES_NEW`)의 존재와 위험** / 커넥션풀이 왜 필요한가
-- [ ] Hibernate LAZY 프록시 초기화 시점 (AOP 프록시와 다른 장치)
-- [ ] N+1이 왜 생기고 어떻게 없앴는지(숫자로)
-- [ ] JWT stateless 장점과 로그아웃 무효화 문제 / 401 vs 403
-- [ ] Unit/Slice/Integration을 각각 언제 쓰나 / 무엇을 mock하나
-- [ ] 로그로 버그를 추적하는 절차 / 민감정보를 안 남기는 이유
+- [x] 요청 하나가 계층을 어떻게 흐르는가 / HTTP 메서드·상태코드 계약 — 통과(Day34 문항1)
+- [x] DTO를 왜 분리하나 / Validation·전역 오류 처리 흐름 — 통과(Day34 문항2)
+- [x] DI를 쓰는 이유 3가지 / 생성자 주입 / 싱글톤 무상태 — 통과(Day34 문항3)
+- [x] **순수 JDBC 대비 JPA가 무엇을 추상화하나** (커넥션풀을 없애는 게 아니라 직접 관리·매핑을 추상화) — 통과(Day34 문항4)
+- [x] 영속성 컨텍스트가 `save()` 없이 UPDATE 하는 원리 — 통과(Day34 문항5)
+- [x] `@Transactional`이 Spring AOP 프록시로 도는 의미 / self-invocation 한계 — 통과(Day17→20→34, 세 번째 재시험 만에 근거 안정)
+- [x] **트랜잭션 전파(`REQUIRED`/`REQUIRES_NEW`)의 존재와 위험** / 커넥션풀이 왜 필요한가 — 통과(Day34 문항7)
+- [x] Hibernate LAZY 프록시 초기화 시점 (AOP 프록시와 다른 장치) — 통과(Day34 문항8)
+- [x] N+1이 왜 생기고 어떻게 없앴는지(숫자로) — 통과(Day34 문항9, 4→1)
+- [ ] JWT stateless 장점과 로그아웃 무효화 문제 / 401 vs 403 — (보완: Day34 오답→Day35 재시험 통과, +7 재확인 전이라 미확정 유지)
+- [ ] Unit/Slice/Integration을 각각 언제 쓰나 / 무엇을 mock하나 — (보완: Day34 오답→Day35 재시험 통과, +7 재확인 전이라 미확정 유지)
+- [x] 로그로 버그를 추적하는 절차 / 민감정보를 안 남기는 이유 — 통과(Day34 문항12)
 
 ## 6. 산출물 (매일 갱신 = 증거)
 
